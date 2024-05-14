@@ -1,0 +1,61 @@
+@page "/login"
+@rendermode InteractiveServer
+@inject ProtectedLocalStorage ProtectedLocalStore
+@using CactusFrontEnd.Cosmos.utils
+@using CactusFrontEnd.Security
+@using Messenger
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+
+<PageTitle>Login</PageTitle>
+<h3>Login</h3>
+
+<label for="userIdInput">User: </label>
+<input type="text" id="userIdInput" name="userIdInput" @bind-value="username"/><br />
+<label for="passwordInput">Password: </label>
+<input type="text" id="passwordInput" name="passwordInput" @bind-value="password"/><br />
+<input type="submit" value="Login" @onclick="login" /><p>@errorString</p>
+
+@code {
+	private string password;
+	private string username;
+	private string errorString = "";
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "redirectUrl")]
+	public string RedirectUrl { get; set; } = "";
+	[Inject]
+	private IMessengerService messengerService { get; set; }
+	[Inject]
+	private NavigationManager navigationManager { get; set; }
+
+	private async Task login()
+	{
+		Account user;
+		errorString = "";
+		try
+		{
+			user = await messengerService.GetAccountByUsername(username);
+		}
+		catch (KeyNotFoundException e)
+		{
+			errorString = e.Message;
+			return;
+		}
+		bool loginSucces = await messengerService.LoginAccount(user.Id, password);
+		if (loginSucces)
+		{
+			AuthorizationToken token = new(user.Id, DateTime.UtcNow);
+			string tokenString = TokenVerification.GetTokenString(token);
+			await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
+			navigationManager.NavigateTo(RedirectUrl);
+		}
+		else
+		{
+			try
+			{
+				await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
+			}
+			catch { }
+		}
+	}
+}
