@@ -59,7 +59,7 @@ namespace CactusFrontEnd.Cosmos
 			if (channel.Users.Contains(user.Id) || user.IsAdmin)
 			{
 				await messageRepo.CreateNew(message);
-				OnMessage.Invoke(channel);
+				OnMessage?.Invoke(channel);
 			}
 			else
 			{
@@ -298,7 +298,7 @@ namespace CactusFrontEnd.Cosmos
 		{
 			try
 			{
-				Guid andrewId = await this.CreateAccount("Linus", "$chlafHase2009");
+				await this.CreateAccount("Fredi", "Pfote");
 			}
 			catch { }
 		}

@@ -1,6 +1,7 @@
 @page "/login"
 @rendermode InteractiveServer
 @inject ProtectedLocalStorage ProtectedLocalStore
+@using CactusFrontEnd.Components.Layout
 @using CactusFrontEnd.Cosmos.utils
 @using CactusFrontEnd.Security
 @using Messenger
@@ -22,14 +23,18 @@
 	private string errorString = "";
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
-	public string RedirectUrl { get; set; } = "";
+	public string? RedirectUrl { get; set; }
 	[Inject]
 	private IMessengerService messengerService { get; set; }
 	[Inject]
 	private NavigationManager navigationManager { get; set; }
+	[Inject]
+	private EventService eventService { get; set; }
 
 	private async Task login()
 	{
+		await logout();
+		eventService.TokenHasChanged();
 		Account user;
 		errorString = "";
 		try
@@ -47,15 +52,18 @@
 			AuthorizationToken token = new(user.Id, DateTime.UtcNow);
 			string tokenString = TokenVerification.GetTokenString(token);
 			await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
-			navigationManager.NavigateTo(RedirectUrl);
+			eventService.TokenHasChanged();
+			navigationManager.NavigateTo(RedirectUrl ?? "/");
+			return;
 		}
-		else
+	}
+
+	private async Task logout()
+	{
+		try
 		{
-			try
-			{
-				await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
-			}
-			catch { }
+			await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
 		}
+		catch { }
 	}
 }

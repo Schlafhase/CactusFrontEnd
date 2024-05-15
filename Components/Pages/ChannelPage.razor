@@ -1,0 +1,103 @@
+﻿@page "/channel/{channelIdAsString}"
+@rendermode InteractiveServer
+@implements IDisposable
+@using CactusFrontEnd.Components.Layout
+@using CactusFrontEnd.Security
+@using Messenger
+@using MessengerInterfaces
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inherits AuthorizedPage
+
+<PageTitle>Channel</PageTitle>
+<h3>@header</h3>
+
+<ul>
+    @foreach (var messageDisplay in messageDisplays)
+    {
+        <li>@messageDisplay</li>
+    }
+</ul>
+<RadzenTextBox @bind-Value="messageContent" Change=@(args => onChange(args)) class="w-100" aria-label="Default TextBox" />
+
+@code {
+    [Parameter]
+    public string ChannelIdAsString { get; set; }
+    [Inject]
+    public IMessengerService messengerService { get; set; }
+    [Inject]
+    public NavigationManager navigationManager { get; set; }
+    MessageDTO_Output[] messages = [];
+    string[] messageDisplays = [];
+    ChannelDTO_Output channel;
+    Account user;
+    string header = "Loading...";
+    string messageContent;
+    string testString = "a";
+    Action<ChannelDTO_Output> onMessageAction;
+
+    protected async override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            onMessageAction = async channel => await refresh();
+            messengerService.OnMessage += onMessageAction;
+            await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"login?redirectUrl=channel/{ChannelIdAsString}"));
+            if (this.signedToken is null)
+            {
+                return;
+            }
+            user = await messengerService.GetAccount(this.signedToken.UserId);
+            try
+            {
+                channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), user.Id);
+                header = string.Join(", ", channel.UserNames);
+                this.StateHasChanged();
+            }
+            catch (KeyNotFoundException)
+            {
+                navigationManager.NavigateTo("Error/NotFound");
+                return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                navigationManager.NavigateTo("Error/Unauthorized");
+                return;
+            }
+            await refresh();
+        }
+    }
+
+    private async void onChange(string value)
+    {
+        Message msg = new(messageContent, DateTime.UtcNow, user.Id, channel.Id);
+        await messengerService.PostMessage(msg, user.Id);
+    }
+
+    private string getMessageDisplay(MessageDTO_Output msg)
+    {
+        return $"{msg.AuthorName}: {msg.Content} - {msg.DateTime}";
+    }
+
+    private async Task refresh()
+    {
+        try
+        {
+            messages = await messengerService.GetAllMessagesInChannel(channel.Id, user.Id);
+            messageDisplays = [];
+            foreach (var message in messages)
+            {
+                messageDisplays = messageDisplays.Append(getMessageDisplay(message)).ToArray();
+            }
+            this.StateHasChanged();
+        }
+        catch {}
+    }
+
+    public void Dispose()
+    {
+        messengerService.OnMessage -= onMessageAction;
+    }
+}

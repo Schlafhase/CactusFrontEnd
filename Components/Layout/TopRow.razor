@@ -1,0 +1,78 @@
+﻿@using CactusFrontEnd.Security
+@using Messenger
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Radzen.Blazor
+@implements IDisposable
+@inject ProtectedLocalStorage ProtectedLocalStore
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@if (user is null)
+{
+	<a href="login">Log in</a>
+}
+else
+{
+	<a>@user.UserName</a>
+	<a href="logout">Log out</a>
+}
+
+@code {
+	private string? token;
+	private Account? user = default;
+	private Action tokenChangeAction;
+	[Inject]
+	private IMessengerService messengerService { get; set; }
+	[Inject]
+	private EventService eventService { get; set; }
+
+	protected async override void OnInitialized()
+	{
+		await refresh();
+		tokenChangeAction = async () =>
+		{
+			await refresh();
+		};
+		eventService.OnTokenChange += tokenChangeAction;
+	}
+
+	public async Task OnTokenUpdate()
+	{
+		await refresh();
+	}
+
+	public async Task refresh()
+	{
+		try
+		{
+			var result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			token = result.Value;
+			if (token is not null)
+			{
+				try
+				{
+					SignedToken signedToken = TokenVerification.GetTokenFromString(token);
+					user = await messengerService.GetAccount(signedToken.UserId);
+				}
+				catch
+				{
+					user = null;
+				}
+			}
+			else
+			{
+				user = null;
+			}
+		}
+		catch
+		{
+			user = null;
+		}
+		this.StateHasChanged();
+	}
+
+	public void Dispose()
+	{
+		eventService.OnTokenChange -= tokenChangeAction;
+	}
+}
