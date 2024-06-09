@@ -20,6 +20,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddBlazorContextMenu();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();

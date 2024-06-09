@@ -6,15 +6,22 @@
 @code {
 	[Inject]
 	private NavigationManager navigationManager { get; set; }
+	[Inject]
+	private EventService eventService { get; set; }
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "redirectUrl")]
+	public string? RedirectUrl { get; set; }
+
 	protected async override void OnAfterRender(bool firstRender)
 	{
 		try
 		{
 			await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
+			eventService.TokenHasChanged();
 		}
 		finally
 		{
-			navigationManager.NavigateTo("login");
+			navigationManager.NavigateTo(RedirectUrl != null ? $"login?redirectUrl={RedirectUrl}" : "login");
 		}
 	}
 }

@@ -2,8 +2,9 @@
 using Microsoft.Azure.Cosmos.Linq;
 using Microsoft.Azure.Cosmos;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace CactusFrontEnd.Cosmos.utils
+namespace CactusFrontEnd.Utils
 {
 
 	public class Utils
@@ -25,14 +26,14 @@ namespace CactusFrontEnd.Cosmos.utils
 		}
 		internal static string GetStringSha256Hash(string text)
 		{
-			if (String.IsNullOrEmpty(text))
-				return String.Empty;
+			if (string.IsNullOrEmpty(text))
+				return string.Empty;
 
 			using (var sha = new System.Security.Cryptography.SHA256Managed())
 			{
 				byte[] textData = System.Text.Encoding.UTF8.GetBytes(text);
 				byte[] hash = sha.ComputeHash(textData);
-				return BitConverter.ToString(hash).Replace("-", String.Empty);
+				return BitConverter.ToString(hash).Replace("-", string.Empty);
 			}
 		}
 
@@ -50,5 +51,42 @@ namespace CactusFrontEnd.Cosmos.utils
 				}
 			}
 		}
+
+		public static async Task DeleteQuery<T>(IQueryable<T> query)
+		{
+			FeedIterator<T> iterator = query
+				.ToFeedIterator();
+
+			while (iterator.HasMoreResults)
+			{
+				FeedResponse<T> page = await iterator.ReadNextAsync();
+				foreach (T? item in page)
+				{
+					
+				}
+			}
+		}
+
+		public static string Relativize(DateTime date1, DateTime date2)
+		{
+			TimeSpan diff = date2 - date1;
+
+			if (diff.Days > 7)
+			{
+				return date1.ToString();
+			}
+			else if (diff.Days >= 1)
+			{
+				return $"{diff.Days} " + (diff.Days != 1 ? "days" : "day") + $" ago at {date1.Hour}:{date1.Minute}";
+			}
+            else if (diff.Hours >= 1)
+            {
+				return $"{diff.Hours} " + (diff.Hours != 1 ? "hours" : "hour") + " ago";
+            }
+			else
+			{
+				return $"{diff.Minutes} " + (diff.Minutes != 1 ? "minutes" : "minute") + " ago";
+			}
+        }
 	}
 }

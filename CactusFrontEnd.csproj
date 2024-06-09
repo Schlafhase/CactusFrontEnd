@@ -7,15 +7,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="InMemoryImplementations\**" />
+    <Content Remove="InMemoryImplementations\**" />
+    <EmbeddedResource Remove="InMemoryImplementations\**" />
+    <None Remove="InMemoryImplementations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
     <PackageReference Include="JsonNet.ContractResolvers" Version="2.0.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.39.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Radzen.Blazor" Version="4.31.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MessengerInterfaces\MessengerInterfaces.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\Images\plus.svg" />
   </ItemGroup>
 
 </Project>

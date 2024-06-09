@@ -1,0 +1,117 @@
+﻿@page "/createChannel"
+@rendermode InteractiveServer
+@using CactusFrontEnd.Components.Layout
+@using CactusFrontEnd.Utils
+@using CactusFrontEnd.Security
+@using Messenger
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inherits AuthorizedPage
+
+<PageTitle>Create Channel</PageTitle>
+
+<h1>Create Channel</h1>
+<div id="userSelection">
+	<span>Add users by their username </span>
+	<input type="text" id="usernameInput" @bind-value=@userName @bind-value:after=@onTextInputChange @onkeydown=@textBoxKeyboardEventHandler />
+	<input type="button" id="addUserButton" value="Add" @onclick=@addUser />
+	<span class="errorSpan">@(errorMessage != "" ? $" - {errorMessage}" : "")</span>
+	<p>Users:</p>
+	<ul>
+		@foreach (var user in users)
+		{
+			<li>
+				<span>@($"{user.UserName} ({user.Id}) ")</span><input type="button" value="Remove" @onclick=@(() => remove(user))/>
+			</li>
+		}
+	</ul>
+	<input type="button" value="Create" @onclick=@create />
+</div>
+
+@code {
+	[Inject]
+	NavigationManager navigationManager { get; set; }
+	[Inject]
+	IMessengerService messengerService { get; set; }
+	[Inject]
+	EventService eventService { get; set; }
+	List<Account> users = [];
+	string userName;
+	string errorMessage = string.Empty;
+	bool enterPressed;
+
+	protected async override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=createChannel"), messengerService);
+			if (signedToken is not null)
+			{
+				Account user = await messengerService.GetAccount(signedToken.UserId);
+				users.Add(user);
+				this.StateHasChanged();
+			}
+		}
+	}
+
+	private async Task addUser()
+	{
+		try
+		{
+			Account user = await messengerService.GetAccountByUsername(userName);
+			enterPressed = false;
+			userName = "";
+			if (users.Where(usr => usr.Id == user.Id).Count() > 0)
+			{
+				throw new ArgumentException("User already added");
+			}
+			users.Add(user);
+			errorMessage = "";
+		}
+		catch (KeyNotFoundException)
+		{
+			errorMessage = "User not Found";
+		}
+		catch (ArgumentException ex)
+		{
+			errorMessage = ex.Message;
+		}
+		finally
+		{
+			this.StateHasChanged();
+		}
+	}
+
+	private void remove(Account user)
+	{
+		if (user.Id != signedToken.UserId)
+		{
+			users.Remove(user);
+			this.StateHasChanged();
+		}
+	}
+
+	private async void create()
+	{
+		await messengerService.CreateChannel(users.Select(usr => usr.Id).ToHashSet(), this.signedToken.UserId);
+		eventService.ChannelsHaveChanged();
+	}
+
+	private async void textBoxKeyboardEventHandler(KeyboardEventArgs args)
+	{
+		if (args.Key == "Enter")
+		{
+			enterPressed = true;
+			await addUser();
+		}
+	}
+
+	private async void onTextInputChange()
+	{
+		if (enterPressed)
+		{
+			await addUser();
+		}
+	}
+}

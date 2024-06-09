@@ -1,8 +1,9 @@
-﻿using CactusFrontEnd.Cosmos.utils;
-using CactusFrontEnd.Exceptions;
+﻿using CactusFrontEnd.Exceptions;
+using CactusFrontEnd.Utils;
 using Messenger;
 using MessengerInterfaces;
 using Microsoft.Azure.Cosmos;
+using System.Linq.Expressions;
 using System.Net;
 
 namespace CactusFrontEnd.Cosmos
@@ -11,13 +12,11 @@ namespace CactusFrontEnd.Cosmos
 	{
 		private readonly CosmosClient client;
 		private readonly Container container;
-		private readonly PartitionKey partitionKey;
 		private readonly string type;
 		public CosmosRepositoryBase(CosmosClient client, string type)
 		{
 			this.client = client;
 			this.container = client.GetContainer("cactus-messenger", "cactus-messenger");
-			this.partitionKey = new("id");
 			this.type = type;
 		}
 
@@ -73,15 +72,31 @@ namespace CactusFrontEnd.Cosmos
 				.Where(item => item.Type == this.type);
 		}
 
-		public async Task Replace(Guid id, T entity)
+		public async Task DeleteItemsWithFilter(Expression<Func<T, bool>> filter)
 		{
-			await container.ReplaceItemAsync<T>(entity, id.ToString(), partitionKey);
+			var query = GetQueryable()
+				.Where(filter)
+				.Select(item => item.Id);
+			var ids = await ToListAsync<Guid>(query);
+
+			await Task.WhenAll(ids
+				.Select(id => DeleteItem(id)));
 		}
 
-		public async Task<List<T>> ToListAsync(IQueryable<T> query)
+		public async Task DeleteItem(Guid id)
 		{
-			IAsyncEnumerable<T> response = Utils.ExecuteQuery<T>(query);
-			List<T> result = await Utils.ToListAsync<T>(response);
+			await container.DeleteItemAsync<T>(id.ToString(), new(id.ToString()));
+		}
+
+		public async Task Replace(Guid id, T entity)
+		{
+			await container.ReplaceItemAsync<T>(entity, id.ToString(), new(id.ToString()));
+		}
+
+		public async Task<List<TElement>> ToListAsync<TElement>(IQueryable<TElement> query)
+		{
+			IAsyncEnumerable<TElement> response = Utils.Utils.ExecuteQuery(query);
+			List<TElement> result = await Utils.Utils.ToListAsync(response);
 			return result;
 		}
 	}

@@ -1,9 +1,9 @@
 ﻿using CactusFrontEnd.Cosmos;
+using MessengerInterfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Azure.Cosmos;
-using System.Linq.Dynamic.Core.Tokenizer;
 
 namespace CactusFrontEnd.Security
 {
@@ -12,7 +12,7 @@ namespace CactusFrontEnd.Security
         private string tokenString;
         protected SignedToken signedToken;
 
-        public async Task Initialize(ProtectedLocalStorage protectedLocalStore, Action action)
+        public async Task Initialize(ProtectedLocalStorage protectedLocalStore, Action action, IMessengerService messengerService)
         {
             //Action gets called when the user is unauthorized
             var result = await protectedLocalStore.GetAsync<string>("AuthorizationToken");
@@ -23,6 +23,15 @@ namespace CactusFrontEnd.Security
                 return;
             }
             signedToken = TokenVerification.GetTokenFromString(tokenString);
+            try
+            {
+                await messengerService.GetAccount(signedToken.UserId);
+            }
+            catch (KeyNotFoundException)
+            {
+				action.Invoke();
+				return;
+			}
 
             TokenVerification.AuthorizeUser(tokenString, action);
         }

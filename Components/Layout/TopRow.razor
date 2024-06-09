@@ -2,7 +2,6 @@
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@using Radzen.Blazor
 @implements IDisposable
 @inject ProtectedLocalStorage ProtectedLocalStore
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
@@ -36,11 +35,6 @@ else
 		eventService.OnTokenChange += tokenChangeAction;
 	}
 
-	public async Task OnTokenUpdate()
-	{
-		await refresh();
-	}
-
 	public async Task refresh()
 	{
 		try
@@ -68,7 +62,7 @@ else
 		{
 			user = null;
 		}
-		this.StateHasChanged();
+		await InvokeAsync(this.StateHasChanged);
 	}
 
 	public void Dispose()

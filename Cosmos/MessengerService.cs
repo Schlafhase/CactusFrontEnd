@@ -1,5 +1,5 @@
-﻿using CactusFrontEnd.Cosmos.utils;
-using CactusFrontEnd.Exceptions;
+﻿using CactusFrontEnd.Exceptions;
+using CactusFrontEnd.Utils;
 using Messenger;
 using MessengerInterfaces;
 
@@ -67,6 +67,18 @@ namespace CactusFrontEnd.Cosmos
 			}
 		}
 
+		public async Task DeleteMessage(Guid id)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			//delete message
+		}
+
+		public async Task DeleteAllMessages()
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			await messageRepo.DeleteItemsWithFilter(item => true);
+		}
+
 		public async Task<MessageDTO_Output[]> GetAllMessages(Guid userId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
@@ -125,10 +137,27 @@ namespace CactusFrontEnd.Cosmos
 			}
 		}
 
+		public async Task DeleteChannel(Guid channelId)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			//remove all users from channel
+			//delete all messages in channel
+			//delete channel
+		}
+
 		public async Task<ChannelDTO_Output> GetChannel(Guid channelId, Guid userId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
 			return await getChannel(channelId, userId);
+		}
+
+		public async Task<ChannelDTO_Output[]> GetChannelsWithUser(Guid accountId, Guid userId)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			var query = channelRepo.GetQueryable()
+				.Where(channel => channel.Users.Contains(accountId));
+			List<Channel> channels = await channelRepo.ToListAsync(query);
+			return await convertChannelsToDtos(channels);
 		}
 
 		private async Task<ChannelDTO_Output> getChannel(Guid channelId, Guid userId)
@@ -186,8 +215,16 @@ namespace CactusFrontEnd.Cosmos
 		{
 			using IDisposable _ = await asyncLocker.Enter();
 			Account user = await getAccount(id);
-			string passwordHash = Utils.GetStringSha256Hash(password + user.Id.ToString());
+			string passwordHash = Utils.Utils.GetStringSha256Hash(password + user.Id.ToString());
 			return passwordHash == user.PasswordHash;
+		}
+
+		public async Task DeleteAccount(Guid id)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			//remove user from all channels
+			//change all authorids from user to deleted CactusConstants.DeletedId
+			//delete account
 		}
 
 		public async Task<Guid> CreateAccount(string username, string password)
@@ -201,7 +238,7 @@ namespace CactusFrontEnd.Cosmos
 			catch (KeyNotFoundException)
 			{
 				Guid userId = Guid.NewGuid();
-				string passwordHash = Utils.GetStringSha256Hash(password + userId.ToString());
+				string passwordHash = Utils.Utils.GetStringSha256Hash(password + userId.ToString());
 				await accountRepo.CreateNew(new Account(username, passwordHash, userId));
 				return userId;
 			}
@@ -252,14 +289,12 @@ namespace CactusFrontEnd.Cosmos
 
 		private async Task<Account> getAccount(Guid Id)
 		{
-			try
+			Account? acc = await accountRepo.GetById(Id);
+			if (acc is null)
 			{
-				return await accountRepo.GetById(Id);
-			}
-			catch (KeyNotFoundException)
-			{
-				throw new Exception($"Unable to find Account with Id {Id}");
+				throw new KeyNotFoundException($"Unable to find Account with Id {Id}");
 			};
+			return acc;
 		}
 
 		//other methods
@@ -278,6 +313,23 @@ namespace CactusFrontEnd.Cosmos
 								{
 									return null!;
 								}
+							})
+							.Where(x => x != null)
+							.ToArray());
+		}
+
+		private async Task<ChannelDTO_Output[]> convertChannelsToDtos(List<Channel> channels)
+		{
+			return await Task.WhenAll(channels
+							.Select(async (chnl) =>
+							{
+								string[] userNames = await Task.WhenAll(chnl.Users
+									.Select(async userId =>
+									{
+										Account user = await getAccount(userId);
+										return user.UserName;
+									}));
+								return new ChannelDTO_Output(chnl, userNames.ToHashSet());
 							})
 							.Where(x => x != null)
 							.ToArray());

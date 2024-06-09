@@ -2,102 +2,158 @@
 @rendermode InteractiveServer
 @implements IDisposable
 @using CactusFrontEnd.Components.Layout
+@using CactusFrontEnd.Utils
 @using CactusFrontEnd.Security
 @using Messenger
 @using MessengerInterfaces
-@using Radzen
-@using Radzen.Blazor
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inherits AuthorizedPage
 
 <PageTitle>Channel</PageTitle>
-<h3>@header</h3>
-
-<ul>
-    @foreach (var messageDisplay in messageDisplays)
-    {
-        <li>@messageDisplay</li>
-    }
-</ul>
-<RadzenTextBox @bind-Value="messageContent" Change=@(args => onChange(args)) class="w-100" aria-label="Default TextBox" />
+<div class="chatContainer">
+	<div class="chat">
+		<h3>@header</h3>
+		<ul>
+			@foreach (var message in messages)
+			{
+				<li class=@(message.AuthorId == user.Id ? "selfSentMessage message" : "message") @oncontextmenu=@(args => handleMessageContextMenu(args, message.Id)) @oncontextmenu:preventDefault="true">
+					<span class="authorName">@message.AuthorName</span><span class="timestamp"> • @Utils.Relativize(message.DateTime, DateTime.UtcNow)</span><br />
+					<span class="messageContent">@message.Content</span>
+				</li>
+			}
+		</ul>
+		<div id="messageInput">
+			<input @bind-value:after=@onTextInputChange id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent" @onkeydown=@textBoxKeyboardEventHandler><input type="button" id="sendButton" value="Send" @onclick=@send />
+		</div>
+	</div>
+</div>
 
 @code {
-    [Parameter]
-    public string ChannelIdAsString { get; set; }
-    [Inject]
-    public IMessengerService messengerService { get; set; }
-    [Inject]
-    public NavigationManager navigationManager { get; set; }
-    MessageDTO_Output[] messages = [];
-    string[] messageDisplays = [];
-    ChannelDTO_Output channel;
-    Account user;
-    string header = "Loading...";
-    string messageContent;
-    string testString = "a";
-    Action<ChannelDTO_Output> onMessageAction;
+	[Parameter]
+	public string ChannelIdAsString { get; set; }
+	[Inject]
+	IMessengerService messengerService { get; set; }
+	[Inject]
+	NavigationManager navigationManager { get; set; }
+	MessageDTO_Output[] messages = [];
+	List<string> messageDisplays = [];
+	ChannelDTO_Output channel;
+	Account user;
+	string header = "Loading...";
+	string messageContent;
+	string testString = "a";
+	bool enterPressed = false;
+	Action<ChannelDTO_Output> onMessageAction;
+	ElementReference messageInput;
+	Timer refreshTimeStampTimer;
 
-    protected async override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            onMessageAction = async channel => await refresh();
-            messengerService.OnMessage += onMessageAction;
-            await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"login?redirectUrl=channel/{ChannelIdAsString}"));
-            if (this.signedToken is null)
-            {
-                return;
-            }
-            user = await messengerService.GetAccount(this.signedToken.UserId);
-            try
-            {
-                channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), user.Id);
-                header = string.Join(", ", channel.UserNames);
-                this.StateHasChanged();
-            }
-            catch (KeyNotFoundException)
-            {
-                navigationManager.NavigateTo("Error/NotFound");
-                return;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                navigationManager.NavigateTo("Error/Unauthorized");
-                return;
-            }
-            await refresh();
-        }
-    }
+	protected async override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			var startTimeSpan = TimeSpan.Zero;
+			var periodTimeSpan = TimeSpan.FromMinutes(1);
 
-    private async void onChange(string value)
-    {
-        Message msg = new(messageContent, DateTime.UtcNow, user.Id, channel.Id);
-        await messengerService.PostMessage(msg, user.Id);
-    }
+			refreshTimeStampTimer = new Timer(async (a) =>
+			{
+				await InvokeAsync(this.StateHasChanged);
+			}, null, startTimeSpan, periodTimeSpan);
 
-    private string getMessageDisplay(MessageDTO_Output msg)
-    {
-        return $"{msg.AuthorName}: {msg.Content} - {msg.DateTime}";
-    }
+			onMessageAction = async channel => await refresh();
+			messengerService.OnMessage += onMessageAction;
 
-    private async Task refresh()
-    {
-        try
-        {
-            messages = await messengerService.GetAllMessagesInChannel(channel.Id, user.Id);
-            messageDisplays = [];
-            foreach (var message in messages)
-            {
-                messageDisplays = messageDisplays.Append(getMessageDisplay(message)).ToArray();
-            }
-            this.StateHasChanged();
-        }
-        catch {}
-    }
+			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}"), messengerService);
+			if (this.signedToken is null)
+			{
+				return;
+			}
+			user = await messengerService.GetAccount(this.signedToken.UserId);
+			try
+			{
+				channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), user.Id);
+				header = string.Join(", ", channel.UserNames);
+				this.StateHasChanged();
+			}
+			catch (UnauthorizedAccessException)
+			{
+				navigationManager.NavigateTo("Error/Unauthorized");
+				return;
+			}
+			catch (Exception ex)
+			{
+				if (ex is KeyNotFoundException || ex is FormatException)
+				{
+					navigationManager.NavigateTo("Error/NotFound");
+				}
+				else
+				{
+					throw;
+				}
+				return;
+			}
+			await refresh();
+		}
+	}
 
-    public void Dispose()
-    {
-        messengerService.OnMessage -= onMessageAction;
-    }
+	private async Task send()
+	{
+		if (!string.IsNullOrWhiteSpace(messageContent))
+		{
+			enterPressed = false;
+			Message msg = new(messageContent, DateTime.UtcNow, user.Id, channel.Id);
+			messageContent = "";
+			await messengerService.PostMessage(msg, user.Id);
+		}
+	}
+
+	private string getMessageDisplay(MessageDTO_Output msg)
+	{
+		return $"{msg.AuthorName}: {msg.Content} - {msg.DateTime}";
+	}
+
+	private async Task refresh()
+	{
+		try
+		{
+			messages = await messengerService.GetAllMessagesInChannel(channel.Id, user.Id);
+			messages = messages.OrderByDescending(o => o.DateTime).ToArray();
+			messageDisplays = [];
+			foreach (var message in messages)
+			{
+				messageDisplays.Add(getMessageDisplay(message));
+			}
+			await InvokeAsync(this.StateHasChanged);
+		}
+		catch { }
+	}
+
+	public void Dispose()
+	{
+		messengerService.OnMessage -= onMessageAction;
+		refreshTimeStampTimer?.Dispose();
+	}
+
+	private async Task textBoxKeyboardEventHandler(KeyboardEventArgs args)
+	{
+		if (args.Key == "Enter")
+		{
+			enterPressed = true;
+			await send();
+		}
+	}
+
+	private async Task onTextInputChange()
+	{
+		if (enterPressed)
+		{
+			await send();
+		}
+	}
+
+	private async Task handleMessageContextMenu(MouseEventArgs args, Guid messageId)
+	{
+		header = $"context menu clicked message id: {messageId}";
+		await InvokeAsync(this.StateHasChanged);
+	}
 }

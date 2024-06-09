@@ -1,4 +1,4 @@
-﻿namespace CactusFrontEnd.Cosmos.utils
+﻿namespace CactusFrontEnd.Utils
 {
 	public class AsyncLocker
 	{

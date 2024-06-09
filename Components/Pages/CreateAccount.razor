@@ -1,0 +1,68 @@
+﻿@page "/createAccount"
+@rendermode InteractiveServer
+@using CactusFrontEnd.Components.Layout
+@using CactusFrontEnd.Utils
+@using CactusFrontEnd.Security
+@using Messenger
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inherits AuthorizedPage
+
+<PageTitle>Create Account</PageTitle>
+<h3>Create Account</h3>
+
+<label for="userIdInput">Username: </label>
+<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" />
+<br />
+<label for="passwordInput">Password: </label>
+<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" />
+<br />
+<input type="submit" value="Create Account" @onclick="create" /><span class="errorSpan">@(errorString != "" ? $" - {errorString}" : "")</span>
+
+@code {
+	private string password = "";
+	private string username = "";
+	private string errorString = "";
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "redirectUrl")]
+	public string? RedirectUrl { get; set; }
+	[Inject]
+	private IMessengerService messengerService { get; set; }
+	[Inject]
+	private NavigationManager navigationManager { get; set; }
+	[Inject]
+	private EventService eventService { get; set; }
+
+	private async Task create()
+	{
+		Account user;
+		errorString = "";
+		try
+		{
+			user = await messengerService.GetAccountByUsername(username);
+		}
+		catch (KeyNotFoundException e)
+		{
+			if (username.Length < 3)
+			{
+				errorString = "Username must be at least 3 characters long";
+				return;
+			}
+			if (password.Length < 4)
+			{
+				errorString = "Please provide a password with at least 4 characters.";
+				return;
+			}
+			await messengerService.CreateAccount(username, password);
+			user = await messengerService.GetAccountByUsername(username);
+			AuthorizationToken token = new(user.Id, DateTime.UtcNow);
+			string tokenString = TokenVerification.GetTokenString(token);
+			await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
+			eventService.TokenHasChanged();
+			navigationManager.NavigateTo(RedirectUrl ?? "/");
+			return;
+		}
+		errorString = "Username is taken";
+	}
+}

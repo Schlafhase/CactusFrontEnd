@@ -1,29 +1,124 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">CactusFrontEnd</a>
-    </div>
+﻿@using CactusFrontEnd.Security
+@using Messenger
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@rendermode InteractiveServer
+@inject ProtectedLocalStorage ProtectedLocalStore
+@implements IDisposable
+@inherits AuthorizedPage
+
+<div class="top-row ps-3 navbar navbar-dark">
+	<div class="container-fluid">
+		<p class="navbar-brand">Channels</p>
+	</div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="channel/00000000-0000-0000-0000-000000000002">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> TestChannel
-            </NavLink>
-        </div>
-        
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="login">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Login
-            </NavLink>
-        </div>
-    </nav>
+	<nav class="flex-column">
+		@if (!loggedIn)
+		{
+			<div class="nav-item px-3">
+				<NavLink class="nav-link" href="login">
+					<span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Login
+				</NavLink>
+			</div>
+		}
+		else
+		{
+		<div class="nav-item px-3">
+			<NavLink class="nav-link" href="createChannel">
+				<span class="bi bi-plus-nav-menu" aria-hidden="true"></span> Create New
+			</NavLink>
+		</div>
+			@foreach (var channel in channels)
+			{
+				<div class="nav-item px-3">
+					<NavLink class="nav-link" href=@($"channel/{channel.Id}")>
+						<span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span>@string.Join(", ", channel.UserNames)
+					</NavLink>
+				</div>
+			}
+		}
+	</nav>
 </div>
+
+@code {
+	[Inject]
+	NavigationManager navigationManager { get; set; }
+	[Inject]
+	IMessengerService messengerService { get; set; }
+	[Inject]
+	private EventService eventService { get; set; }
+	Account user;
+	ChannelDTO_Output[] channels = [];
+	Action tokenChangeAction;
+	bool loggedIn;
+
+	protected async override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			loggedIn = true;
+			await this.Initialize(ProtectedLocalStore, () => loggedIn = false, messengerService);
+			tokenChangeAction = async () =>
+			{
+				await refresh();
+			};
+			eventService.OnTokenChange += tokenChangeAction;
+			eventService.OnChannelListChange += tokenChangeAction;
+			if (this.signedToken is null)
+			{
+				return;
+			}
+			await refresh();
+		}
+	}
+
+	private async Task refresh()
+	{
+		ProtectedBrowserStorageResult<string> result;
+		try
+		{
+			result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+		}
+		catch (InvalidOperationException)
+		{
+			loggedIn = false;
+			channels = [];
+			await InvokeAsync(this.StateHasChanged);
+			return;
+		}
+		var token = result.Value;
+		if (token is not null)
+		{
+			loggedIn = true;
+			SignedToken signedToken = TokenVerification.GetTokenFromString(token);
+			try
+			{
+				user = await messengerService.GetAccount(signedToken.UserId);
+			}
+			catch (KeyNotFoundException)
+			{
+				loggedIn = false;
+				channels = [];
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
+			channels = await messengerService.GetChannelsWithUser(user.Id, user.Id);
+		}
+		else
+		{
+			loggedIn = false;
+			channels = [];
+		}
+		await InvokeAsync(this.StateHasChanged);
+	}
+
+	public void Dispose()
+	{
+		eventService.OnTokenChange -= tokenChangeAction;
+		eventService.OnChannelListChange -= tokenChangeAction;
+	}
+}
