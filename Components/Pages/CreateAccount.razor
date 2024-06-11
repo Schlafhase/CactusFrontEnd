@@ -56,6 +56,11 @@
 				errorString = "Username must be at least 3 characters long";
 				return;
 			}
+			if (username.Length > 40)
+			{
+				errorString = "Username can only be 40 characters long.";
+				return;
+			}
 			if (password.Length < 4)
 			{
 				errorString = "Please provide a password with at least 4 characters.";

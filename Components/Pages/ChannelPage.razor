@@ -11,33 +11,33 @@
 @inject IJSRuntime jsRuntime
 @inherits AuthorizedPage
 
-<PageTitle>Channel</PageTitle>
+<PageTitle>@((channel is not null ? channel.Name : "Channel") + " - Cactus Messenger")</PageTitle>
 <div class="chatContainer">
 	<div class="chat">
-		<h3>@header</h3>
-		<p style="opacity: 0.5">@channelMembers</p>
+		<div class="channelName">
+			<h3>@header</h3>
+			<p style="opacity: 0.5">@channelMembers</p>
+		</div>
 		<ul>
-			@foreach (var message in messages)
+			@foreach ((int i, MessageDTO_Output message) in Utils.Enumerate(messages.ToList()))
 			{
 				<li class=@(message.AuthorId == user.Id ? "selfSentMessage message" : "message")>
-					@if (message.AuthorId == user.Id || user.IsAdmin)
-					{
-						<ContextMenuTrigger id=@message.Id.ToString() MenuId="messageContextMenu">
-								<span class="authorName">@message.AuthorName</span><span class="timestamp">@Utils.Relativize(message.DateTime, DateTime.UtcNow)</span><br />
-							<div class="messageContent">
-								<span class="messageContent">@message.Content</span>
-							</div>
-						</ContextMenuTrigger>
-					}
-					else
-					{
-						<span class="authorName">@message.AuthorName</span>
 
-						<span class="timestamp">@Utils.Relativize(message.DateTime, DateTime.UtcNow)</span>
-
-						<br />
-						<span class="messageContent">@message.Content</span>
-					}
+					<ContextMenuTrigger id=@message.Id.ToString() MenuId=@(message.AuthorId == user.Id || user.IsAdmin ? "messageContextMenuWithDelete" : "messageContextMenu")>
+						@if ((messages[i].AuthorId != (i + 1 > messages.Length - 1 ? Guid.Empty : messages[i + 1].AuthorId)) || messages[i].DateTime - (i + 1 > messages.Length - 1 ? DateTime.MinValue : messages[i + 1].DateTime) > TimeSpan.FromMinutes(2))
+						{
+							<span class="authorName">@message.AuthorName</span>
+							@if (message.AuthorIsAdmin)
+							{
+								<span class="adminBadge" title="Admin/Developer"></span>
+							}
+							<span class="timestamp" title=@(message.DateTime.AddHours(timeZoneOffset).ToString())>@Utils.Relativize(message.DateTime.AddHours(timeZoneOffset), DateTime.UtcNow.AddHours(timeZoneOffset))</span>
+							<br />
+						}
+						<div class="messageContent">
+							<span class="messageContent">@message.Content</span>
+						</div>
+					</ContextMenuTrigger>
 				</li>
 			}
 		</ul>
@@ -48,9 +48,38 @@
 </div>
 
 <ContextMenu Id="messageContextMenu" Template="cactusTemplate">
+	<Item OnClick=@copyMessageIdClick>Copy Id</Item>
+</ContextMenu>
+<ContextMenu Id="messageContextMenuWithDelete" Template="cactusTemplate">
 	<Item OnClick=@deleteMessageClick>Delete Message</Item>
 	<Item OnClick=@copyMessageIdClick>Copy Id</Item>
 </ContextMenu>
+
+<script>
+	window.localDate = () => {
+		var ldCurrentDate = new Date();
+		return ldCurrentDate.getFullYear() +
+			"-" + String(ldCurrentDate.getMonth() + 1).padStart(2, '0') +
+			"-" + String(ldCurrentDate.getDate()).padStart(2, '0') +
+			"T" +
+			String(ldCurrentDate.getHours()).padStart(2, '0') +
+			":" + String(ldCurrentDate.getMinutes()).padStart(2, '0') +
+			":" + String(ldCurrentDate.getSeconds()).padStart(2, '0');
+	};
+	window.utcDate = () => {
+		var ldCurrentDate = new Date();
+		return ldCurrentDate.getUTCFullYear() +
+			"-" + String(ldCurrentDate.getUTCMonth() + 1).padStart(2, '0') +
+			"-" + String(ldCurrentDate.getUTCDate()).padStart(2, '0') +
+			"T" +
+			String(ldCurrentDate.getUTCHours()).padStart(2, '0') +
+			":" + String(ldCurrentDate.getUTCMinutes()).padStart(2, '0') +
+			":" + String(ldCurrentDate.getUTCSeconds()).padStart(2, '0');
+	};
+	window.timeZoneOffset = () => {
+		return new Date().getTimezoneOffset() / 60;
+	};
+</script>
 
 @code {
 	[Parameter]
@@ -67,6 +96,7 @@
 	string messageContent;
 	string testString = "a";
 	bool enterPressed = false;
+	int timeZoneOffset;
 	Action<ChannelDTO_Output> onMessageAction;
 	ElementReference messageInput;
 	Timer refreshTimeStampTimer;
@@ -75,6 +105,8 @@
 	{
 		if (firstRender)
 		{
+			timeZoneOffset = await jsRuntime.InvokeAsync<int>("timeZoneOffset");
+			timeZoneOffset *= -1;
 			var startTimeSpan = TimeSpan.Zero;
 			var periodTimeSpan = TimeSpan.FromMinutes(1);
 
@@ -134,11 +166,6 @@
 			messageContent = "";
 			await messengerService.PostMessage(msg, user.Id);
 		}
-	}
-
-	private string getMessageDisplay(MessageDTO_Output msg)
-	{
-		return $"{msg.AuthorName}: {msg.Content} - {msg.DateTime}";
 	}
 
 	private async Task refresh()

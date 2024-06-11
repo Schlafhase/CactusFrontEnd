@@ -30,7 +30,7 @@
     width: 1.25rem;
     height: 1.25rem;
     margin-right: 0.75rem;
-    top: -1px;
+    top: 5px;
     background-size: cover;
 }
 
@@ -64,6 +64,7 @@
     }
 
     .nav-item ::deep .nav-link {
+
         color: #d7d7d7;
         background: none;
         border: none;
@@ -103,12 +104,16 @@
     .nav-scrollable {
         /* Never collapse the sidebar for wide screens */
         display: block;
-
         /* Allow sidebar to scroll for tall menus */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
         overflow-x: hidden;
-        word-break: break-word;
         scrollbar-color: #4d0082 #1f0058;
     }
+}
+
+.navLink {
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    white-space: nowrap;
 }

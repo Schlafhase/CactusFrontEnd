@@ -77,7 +77,7 @@ namespace CactusFrontEnd.Utils
 			}
 			else if (diff.Days >= 1)
 			{
-				return $"{diff.Days} " + (diff.Days != 1 ? "days" : "day") + $" ago at {date1.Hour}:{date1.Minute}";
+				return $"{diff.Days} " + (diff.Days != 1 ? "days" : "day") + $" ago at " + (date1.Hour > 9 ? date1.Hour.ToString() : "0" + date1.Hour.ToString()) + ":" + (date1.Minute > 9 ? date1.Minute.ToString() : "0" + date1.Minute.ToString());
 			}
             else if (diff.Hours >= 1)
             {
@@ -88,5 +88,15 @@ namespace CactusFrontEnd.Utils
 				return $"{diff.Minutes} " + (diff.Minutes != 1 ? "minutes" : "minute") + " ago";
 			}
         }
+
+		public static List<(int, T)> Enumerate<T>(List<T> enumerable)
+		{
+			List<(int, T)> output = [];
+			for (int i = 0; i < enumerable.Count; i++)
+			{
+				output.Add((i, enumerable[i]));
+			}
+			return output;
+		}
 	}
 }

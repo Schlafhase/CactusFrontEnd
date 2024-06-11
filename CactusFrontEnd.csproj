@@ -26,7 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="wwwroot\Images\plus.svg" />
+    <Folder Include="Images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\Images\admin_icon.svg" />
   </ItemGroup>
 
 </Project>

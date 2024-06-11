@@ -23,19 +23,20 @@
 	<span>Add users by their username </span>
 	<input type="text" id="usernameInput" @bind-value=@userName @bind-value:after=@onTextInputChange @onkeydown=@textBoxKeyboardEventHandler />
 	<input type="button" id="addUserButton" value="Add" @onclick=@addUser />
-	<span class="errorSpan">@(errorMessage != "" ? $" - {errorMessage}" : "")</span>
+	<span class="errorSpan">@(addUserErrorMessage != "" ? $" - {addUserErrorMessage}" : "")</span>
 	<p>Users:</p>
 	<ul>
 		@foreach (var user in users)
 		{
 			<li>
-				<span>@($"{user.UserName} ({user.Id}) ")</span><input type="button" value="Remove" @onclick=@(() => remove(user))/>
+				<span>@($"{user.UserName} ({user.Id}) ")</span><input type="button" value="Remove" @onclick=@(() => remove(user)) />
 			</li>
 		}
 	</ul>
-	<span>Name of the Channel:</span><br/>
-	<input type="text" @bind-value=@channelName/>
+	<span>Name of the Channel:</span><br />
+	<input type="text" @bind-value=@channelName />
 	<input type="button" value="Create" @onclick=@create />
+	<span class="errorSpan">@(errorMessage != "" ? $" - {errorMessage}" : "")</span>
 </div>
 
 @code {
@@ -49,6 +50,7 @@
 	string userName;
 	string channelName;
 	string errorMessage = string.Empty;
+	string addUserErrorMessage = string.Empty;
 	bool enterPressed;
 
 	protected async override void OnAfterRender(bool firstRender)
@@ -81,15 +83,15 @@
 				throw new ArgumentException("User already added");
 			}
 			users.Add(user);
-			errorMessage = "";
+			addUserErrorMessage = "";
 		}
 		catch (KeyNotFoundException)
 		{
-			errorMessage = "User not Found";
+			addUserErrorMessage = "User not Found";
 		}
 		catch (ArgumentException ex)
 		{
-			errorMessage = ex.Message;
+			addUserErrorMessage = ex.Message;
 		}
 		finally
 		{
@@ -108,9 +110,20 @@
 
 	private async void create()
 	{
-		if(string.IsNullOrWhiteSpace(channelName))
+		try
 		{
-			errorMessage = "Please provide a channel name";
+			if (string.IsNullOrWhiteSpace(channelName))
+			{
+				throw new ArgumentException("Please provide a channel name.");
+			}
+			if (channelName.Length > 40)
+			{
+				throw new ArgumentException("Channel name can only be 40 characters long.");
+			}
+		}
+		catch (ArgumentException ex)
+		{
+			errorMessage = ex.Message;
 			this.StateHasChanged();
 			return;
 		}

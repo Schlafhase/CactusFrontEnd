@@ -44,7 +44,7 @@ namespace CactusFrontEnd.Cosmos
 			{
 				try
 				{
-					MessageDTO_Output msgDTO = new(msg, author.UserName);
+					MessageDTO_Output msgDTO = new(msg, author.UserName, author.IsAdmin);
 					return msgDTO;
 				}
 				catch (KeyNotFoundException)
@@ -373,7 +373,7 @@ namespace CactusFrontEnd.Cosmos
 								try
 								{
 									Account author = await getAccount(msg.AuthorId);
-									return new MessageDTO_Output(msg, author.UserName);
+									return new MessageDTO_Output(msg, author.UserName, author.IsAdmin);
 								}
 								catch (Exception)
 								{
@@ -414,11 +414,7 @@ namespace CactusFrontEnd.Cosmos
 
 		public async Task InitializeAsync()
 		{
-			try
-			{
-				await this.CreateAccount("Fredi", "Pfote");
-			}
-			catch { }
+
 		}
 	}
 }

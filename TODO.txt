@@ -1,7 +1,7 @@
 -seiten schöner machen
 -adming control panel
--admin badge
 -channel details page
--limits für username passwort und channelname
 -global channel
 -user zu channel adden
+-context menu für ios (?)
+-the weird discord thing maybe
