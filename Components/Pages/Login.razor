@@ -8,6 +8,13 @@
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
+<style>
+	.errorSpan {
+		color: red;
+		font-style: italic;
+	}
+</style>
+
 <PageTitle>Login</PageTitle>
 <h3>Login</h3>
 <p>If you don't have an account yet you can create one <a href=@($"createAccount?redirectUrl={RedirectUrl}")>here</a>.</p>

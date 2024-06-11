@@ -67,21 +67,21 @@ namespace CactusFrontEnd.Security
 
         private static byte[] signData(string data)
         {
-            using (var rsa = new RSACryptoServiceProvider())
+            using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
             {
                 rsa.ImportRSAPrivateKey(privateKey, out _);
-                var rsaParams = rsa.ExportParameters(true);
-                var bytes = rsa.SignData(Encoding.UTF8.GetBytes(data), SHA256.Create());
+				RSAParameters rsaParams = rsa.ExportParameters(true);
+				byte[] bytes = rsa.SignData(Encoding.UTF8.GetBytes(data), SHA256.Create());
                 return bytes;
             }
         }
 
         private static bool verifyData(string data, byte[] signature, byte[] publicKey)
         {
-            using (var rsa = new RSACryptoServiceProvider())
+            using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
             {
                 rsa.ImportRSAPublicKey(publicKey, out _);
-                var rsaParams = rsa.ExportParameters(false);
+				RSAParameters rsaParams = rsa.ExportParameters(false);
                 return rsa.VerifyData(Encoding.UTF8.GetBytes(data), SHA256.Create(), signature);
             }
         }

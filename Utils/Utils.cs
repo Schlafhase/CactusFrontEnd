@@ -18,7 +18,7 @@ namespace CactusFrontEnd.Utils
 		public static async Task<List<T>> ToListAsync<T>(IAsyncEnumerable<T> source)
 		{
 			List<T> result = [];
-			await foreach (var item in source)
+			await foreach (T? item in source)
 			{
 				result.Add(item);
 			}
@@ -29,7 +29,7 @@ namespace CactusFrontEnd.Utils
 			if (string.IsNullOrEmpty(text))
 				return string.Empty;
 
-			using (var sha = new System.Security.Cryptography.SHA256Managed())
+			using (System.Security.Cryptography.SHA256Managed sha = new System.Security.Cryptography.SHA256Managed())
 			{
 				byte[] textData = System.Text.Encoding.UTF8.GetBytes(text);
 				byte[] hash = sha.ComputeHash(textData);
@@ -45,7 +45,7 @@ namespace CactusFrontEnd.Utils
 			while (iterator.HasMoreResults)
 			{
 				FeedResponse<T> page = await iterator.ReadNextAsync();
-				foreach (var item in page)
+				foreach (T? item in page)
 				{
 					yield return item;
 				}

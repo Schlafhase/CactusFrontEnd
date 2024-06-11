@@ -141,7 +141,7 @@ namespace Messenger.Controllers
         {
             try
             {
-                return await messengerService.CreateChannel(userIds, userId);
+                return await messengerService.CreateChannel(userIds, userId, "");
             }
             catch (Exception ex)
             {

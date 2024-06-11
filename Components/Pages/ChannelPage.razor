@@ -8,18 +8,36 @@
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ProtectedLocalStorage ProtectedLocalStore
+@inject IJSRuntime jsRuntime
 @inherits AuthorizedPage
 
 <PageTitle>Channel</PageTitle>
 <div class="chatContainer">
 	<div class="chat">
 		<h3>@header</h3>
+		<p style="opacity: 0.5">@channelMembers</p>
 		<ul>
 			@foreach (var message in messages)
 			{
-				<li class=@(message.AuthorId == user.Id ? "selfSentMessage message" : "message") @oncontextmenu=@(args => handleMessageContextMenu(args, message.Id)) @oncontextmenu:preventDefault="true">
-					<span class="authorName">@message.AuthorName</span><span class="timestamp"> • @Utils.Relativize(message.DateTime, DateTime.UtcNow)</span><br />
-					<span class="messageContent">@message.Content</span>
+				<li class=@(message.AuthorId == user.Id ? "selfSentMessage message" : "message")>
+					@if (message.AuthorId == user.Id || user.IsAdmin)
+					{
+						<ContextMenuTrigger id=@message.Id.ToString() MenuId="messageContextMenu">
+								<span class="authorName">@message.AuthorName</span><span class="timestamp">@Utils.Relativize(message.DateTime, DateTime.UtcNow)</span><br />
+							<div class="messageContent">
+								<span class="messageContent">@message.Content</span>
+							</div>
+						</ContextMenuTrigger>
+					}
+					else
+					{
+						<span class="authorName">@message.AuthorName</span>
+
+						<span class="timestamp">@Utils.Relativize(message.DateTime, DateTime.UtcNow)</span>
+
+						<br />
+						<span class="messageContent">@message.Content</span>
+					}
 				</li>
 			}
 		</ul>
@@ -28,6 +46,11 @@
 		</div>
 	</div>
 </div>
+
+<ContextMenu Id="messageContextMenu" Template="cactusTemplate">
+	<Item OnClick=@deleteMessageClick>Delete Message</Item>
+	<Item OnClick=@copyMessageIdClick>Copy Id</Item>
+</ContextMenu>
 
 @code {
 	[Parameter]
@@ -39,8 +62,8 @@
 	MessageDTO_Output[] messages = [];
 	List<string> messageDisplays = [];
 	ChannelDTO_Output channel;
-	Account user;
 	string header = "Loading...";
+	string channelMembers = "";
 	string messageContent;
 	string testString = "a";
 	bool enterPressed = false;
@@ -60,7 +83,13 @@
 				await InvokeAsync(this.StateHasChanged);
 			}, null, startTimeSpan, periodTimeSpan);
 
-			onMessageAction = async channel => await refresh();
+			onMessageAction = async channel =>
+			{
+				if (channel.Users.Contains(user.Id) || channel.Id == Guid.Parse(ChannelIdAsString))
+				{
+					await refresh();
+				}
+			};
 			messengerService.OnMessage += onMessageAction;
 
 			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}"), messengerService);
@@ -68,11 +97,11 @@
 			{
 				return;
 			}
-			user = await messengerService.GetAccount(this.signedToken.UserId);
 			try
 			{
 				channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), user.Id);
-				header = string.Join(", ", channel.UserNames);
+				channelMembers = string.Join(", ", channel.UserNames);
+				header = channel.Name ?? channelMembers;
 				this.StateHasChanged();
 			}
 			catch (UnauthorizedAccessException)
@@ -101,7 +130,7 @@
 		if (!string.IsNullOrWhiteSpace(messageContent))
 		{
 			enterPressed = false;
-			Message msg = new(messageContent, DateTime.UtcNow, user.Id, channel.Id);
+			Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
 			messageContent = "";
 			await messengerService.PostMessage(msg, user.Id);
 		}
@@ -118,11 +147,6 @@
 		{
 			messages = await messengerService.GetAllMessagesInChannel(channel.Id, user.Id);
 			messages = messages.OrderByDescending(o => o.DateTime).ToArray();
-			messageDisplays = [];
-			foreach (var message in messages)
-			{
-				messageDisplays.Add(getMessageDisplay(message));
-			}
 			await InvokeAsync(this.StateHasChanged);
 		}
 		catch { }
@@ -151,9 +175,14 @@
 		}
 	}
 
-	private async Task handleMessageContextMenu(MouseEventArgs args, Guid messageId)
+	private async Task deleteMessageClick(ItemClickEventArgs e)
 	{
-		header = $"context menu clicked message id: {messageId}";
-		await InvokeAsync(this.StateHasChanged);
+		string messageId = e.ContextMenuTrigger.Id;
+		await messengerService.DeleteMessage(Guid.Parse(messageId), user.Id);
+	}
+
+	private async void copyMessageIdClick(ItemClickEventArgs e)
+	{
+		await jsRuntime.InvokeVoidAsync($"navigator.clipboard.writeText", e.ContextMenuTrigger.Id);
 	}
 }

@@ -14,7 +14,7 @@ namespace CactusFrontEnd.Security
 
 		private ClaimsPrincipal GetUser(string userName, string id, string role)
 		{
-			var identity = new ClaimsIdentity(new[]
+			ClaimsIdentity identity = new ClaimsIdentity(new[]
 			{
 			new Claim(ClaimTypes.Sid, id),
 			new Claim(ClaimTypes.Name, userName),
@@ -25,7 +25,7 @@ namespace CactusFrontEnd.Security
 
 		private ClaimsPrincipal GetAnonymous()
 		{
-			var identity = new ClaimsIdentity(new[]
+			ClaimsIdentity identity = new ClaimsIdentity(new[]
 			{
 			new Claim(ClaimTypes.Sid, "0"),
 			new Claim(ClaimTypes.Name, "Anonymous"),
@@ -36,14 +36,14 @@ namespace CactusFrontEnd.Security
 
 		public override Task<AuthenticationState> GetAuthenticationStateAsync()
 		{
-			var task = Task.FromResult(new AuthenticationState(this.CurrentUser));
+			Task<AuthenticationState> task = Task.FromResult(new AuthenticationState(this.CurrentUser));
 			return task;
 		}
 
 		public Task<AuthenticationState> ChangeUser(string username, string id, string role)
 		{
 			this.CurrentUser = this.GetUser(username, id, role);
-			var task = this.GetAuthenticationStateAsync();
+			Task<AuthenticationState> task = this.GetAuthenticationStateAsync();
 			this.NotifyAuthenticationStateChanged(task);
 			return task;
 		}
@@ -51,7 +51,7 @@ namespace CactusFrontEnd.Security
 		public Task<AuthenticationState> Logout()
 		{
 			this.CurrentUser = this.GetAnonymous();
-			var task = this.GetAuthenticationStateAsync();
+			Task<AuthenticationState> task = this.GetAuthenticationStateAsync();
 			this.NotifyAuthenticationStateChanged(task);
 			return task;
 		}

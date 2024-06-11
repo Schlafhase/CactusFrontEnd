@@ -24,7 +24,7 @@ namespace CactusFrontEnd.Cosmos
 		{
 			try
 			{
-				var response = await container.CreateItemAsync<T>(entity, new PartitionKey(entity.Id.ToString()));
+				ItemResponse<T> response = await container.CreateItemAsync<T>(entity, new PartitionKey(entity.Id.ToString()));
 				if (response.StatusCode is HttpStatusCode.Conflict)
 				{
 					throw new StatusCodeException(HttpStatusCode.Conflict);
@@ -42,7 +42,7 @@ namespace CactusFrontEnd.Cosmos
 
 		public async Task<List<T>> GetAll()
 		{
-			var q = this.GetQueryable();
+			IQueryable<T> q = this.GetQueryable();
 			return await this.ToListAsync(q);
 		}
 
@@ -50,7 +50,7 @@ namespace CactusFrontEnd.Cosmos
 		{
 			try
 			{
-				var q = this.GetQueryable()
+				IQueryable<T> q = this.GetQueryable()
 					.Where(item => item.Id == id);
 				List<T> result = await this.ToListAsync(q);
 				//ItemResponse<T> result = await container.ReadItemAsync<T>(id.ToString(), new PartitionKey(id.ToString()));
@@ -74,10 +74,10 @@ namespace CactusFrontEnd.Cosmos
 
 		public async Task DeleteItemsWithFilter(Expression<Func<T, bool>> filter)
 		{
-			var query = GetQueryable()
+			IQueryable<Guid> query = GetQueryable()
 				.Where(filter)
 				.Select(item => item.Id);
-			var ids = await ToListAsync<Guid>(query);
+			List<Guid> ids = await ToListAsync<Guid>(query);
 
 			await Task.WhenAll(ids
 				.Select(id => DeleteItem(id)));

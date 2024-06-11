@@ -1,7 +1,9 @@
-﻿using CactusFrontEnd.Exceptions;
+﻿using CactusFrontEnd.Components;
+using CactusFrontEnd.Exceptions;
 using CactusFrontEnd.Utils;
 using Messenger;
 using MessengerInterfaces;
+using Microsoft.AspNetCore.Components;
 
 namespace CactusFrontEnd.Cosmos
 {
@@ -13,22 +15,27 @@ namespace CactusFrontEnd.Cosmos
 		private IRepository<Account> accountRepo;
 		private IRepository<Channel> channelRepo;
 		private IRepository<Message> messageRepo;
+		private EventService eventService;
 
-		public MessengerService(IRepository<Account> accountRepo, IRepository<Channel> channelRepo, IRepository<Message> messageRepo)
+		public MessengerService(IRepository<Account> accountRepo, IRepository<Channel> channelRepo, IRepository<Message> messageRepo, EventService eventService)
 		{
 			asyncLocker = new AsyncLocker();
 			this.accountRepo = accountRepo;
 			this.channelRepo = channelRepo;
 			this.messageRepo = messageRepo;
-
+			this.eventService = eventService;
 		}
 
 		//Message related methods
 		public async Task<MessageDTO_Output> GetMessage(Guid Id, Guid userId)
 		{
-			Message msg;
 			using IDisposable _ = await asyncLocker.Enter();
-			msg = await messageRepo.GetById(Id);
+			return await getMessage(Id, userId);
+		}
+
+		private async Task<MessageDTO_Output> getMessage(Guid Id, Guid userId)
+		{
+			Message msg = await messageRepo.GetById(Id);
 			Account author = await getAccount(msg.AuthorId);
 			ChannelDTO_Output channel = await getChannel(msg.ChannelId, userId);
 			Account user = await getAccount(userId);
@@ -67,10 +74,18 @@ namespace CactusFrontEnd.Cosmos
 			}
 		}
 
-		public async Task DeleteMessage(Guid id)
+		public async Task DeleteMessage(Guid id, Guid userId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
-			//delete message
+			MessageDTO_Output msg = await getMessage(id, userId);
+			Account user = await getAccount(userId);
+			if (msg.AuthorId == userId || user.IsAdmin)
+			{
+				ChannelDTO_Output channel = await getChannel(msg.ChannelId, userId);
+				//delete message
+				await messageRepo.DeleteItem(id);
+				OnMessage?.Invoke(channel);
+			}
 		}
 
 		public async Task DeleteAllMessages()
@@ -105,7 +120,7 @@ namespace CactusFrontEnd.Cosmos
 			using IDisposable _ = await asyncLocker.Enter();
 			channel = await getChannel(channelId, userId);
 			user = await getAccount(userId);
-			var query = messageRepo.GetQueryable()
+			IQueryable<Message> query = messageRepo.GetQueryable()
 				.Where(msg => msg.ChannelId == channelId);
 
 
@@ -121,14 +136,14 @@ namespace CactusFrontEnd.Cosmos
 		}
 
 		//Channel related methods
-		public async Task<Guid> CreateChannel(HashSet<Guid> userIds, Guid userId)
+		public async Task<Guid> CreateChannel(HashSet<Guid> userIds, Guid userId, string name)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
 			Account user = await getAccount(userId);
 			if (userIds.Contains(user.Id) || user.IsAdmin)
 			{
 				Guid channelId = Guid.NewGuid();
-				await channelRepo.CreateNew(new Channel(userIds, channelId));
+				await channelRepo.CreateNew(new Channel(userIds, channelId, name));
 				return channelId;
 			}
 			else
@@ -140,9 +155,38 @@ namespace CactusFrontEnd.Cosmos
 		public async Task DeleteChannel(Guid channelId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
-			//remove all users from channel
+			await deleteChannel(channelId);
+			eventService.ChannelsHaveChanged();
+		}
+
+		private async Task deleteChannel(Guid channelId)
+		{
 			//delete all messages in channel
+			await messageRepo.DeleteItemsWithFilter(msg => msg.ChannelId == channelId);
 			//delete channel
+			await channelRepo.DeleteItem(channelId);
+		}
+
+		public async Task RemoveUserFromChannel(Guid channelId, Guid accountId, Guid userId)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			await removeUserFromChannel(channelId, accountId, userId);
+		}
+
+		private async Task removeUserFromChannel(Guid channelId, Guid accountId, Guid userId)
+		{
+			ChannelDTO_Output channelDTO = await getChannel(channelId, userId);
+			channelDTO.Users.Remove(accountId);
+			if (channelDTO.Users.Count == 0)
+			{
+				await deleteChannel(channelId);
+			}
+			else
+			{
+				Channel channel = new(channelDTO.Users, channelId, channelDTO.Name);
+				await channelRepo.Replace(channelId, channel);
+			}
+			eventService.ChannelsHaveChanged();
 		}
 
 		public async Task<ChannelDTO_Output> GetChannel(Guid channelId, Guid userId)
@@ -154,7 +198,7 @@ namespace CactusFrontEnd.Cosmos
 		public async Task<ChannelDTO_Output[]> GetChannelsWithUser(Guid accountId, Guid userId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
-			var query = channelRepo.GetQueryable()
+			IQueryable<Channel> query = channelRepo.GetQueryable()
 				.Where(channel => channel.Users.Contains(accountId));
 			List<Channel> channels = await channelRepo.ToListAsync(query);
 			return await convertChannelsToDtos(channels);
@@ -223,8 +267,30 @@ namespace CactusFrontEnd.Cosmos
 		{
 			using IDisposable _ = await asyncLocker.Enter();
 			//remove user from all channels
+			IQueryable<Message> messageQuery = messageRepo.GetQueryable()
+				.Where(msg => msg.AuthorId == id);
+			List<Message> messages = await messageRepo.ToListAsync(messageQuery);
+			await Task.WhenAll(messages
+				.Select(msg =>
+				{
+					Message newMessage = new Message(msg.Id, msg.Content, msg.DateTime, CactusConstants.DeletedId, msg.ChannelId);
+					return messageRepo.Replace(msg.Id, newMessage);
+				}));
+			IQueryable<Guid> channelQuery = channelRepo.GetQueryable()
+				.Where(channel => channel.Users.Contains(id))
+				.Select(channel => channel.Id);
+
+			List<Guid> channelIds = await channelRepo.ToListAsync(channelQuery);
+			await Task.WhenAll(channelIds
+				.Select(channelId =>
+				{
+					return removeUserFromChannel(channelId, id, id);
+				}));
+			eventService.ChannelsHaveChanged();
 			//change all authorids from user to deleted CactusConstants.DeletedId
+
 			//delete account
+			await accountRepo.DeleteItem(id);
 		}
 
 		public async Task<Guid> CreateAccount(string username, string password)
@@ -268,7 +334,7 @@ namespace CactusFrontEnd.Cosmos
 
 		public async Task<Account> GetAccountByUsername(string username)
 		{
-			using var _ = await asyncLocker.Enter();
+			using IDisposable _ = await asyncLocker.Enter();
 			return await getAccountByUsername(username);
 		}
 

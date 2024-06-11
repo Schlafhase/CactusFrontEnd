@@ -27,22 +27,28 @@
 		}
 		else
 		{
-		<div class="nav-item px-3">
-			<NavLink class="nav-link" href="createChannel">
-				<span class="bi bi-plus-nav-menu" aria-hidden="true"></span> Create New
-			</NavLink>
-		</div>
+			<div class="nav-item px-3">
+				<NavLink class="nav-link" href="createChannel">
+					<span class="bi bi-plus-nav-menu" aria-hidden="true"></span> Create New
+				</NavLink>
+			</div>
 			@foreach (var channel in channels)
 			{
-				<div class="nav-item px-3">
-					<NavLink class="nav-link" href=@($"channel/{channel.Id}")>
-						<span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span>@string.Join(", ", channel.UserNames)
-					</NavLink>
-				</div>
+				<ContextMenuTrigger id=@channel.Id.ToString() MenuId="channelContextMenu">
+					<div class="nav-item px-3">
+						<NavLink class="nav-link" href=@($"channel/{channel.Id}")>
+							<span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span>@(channel.Name ?? string.Join(", ", channel.UserNames))
+						</NavLink>
+					</div>
+				</ContextMenuTrigger>
 			}
 		}
 	</nav>
 </div>
+
+<ContextMenu Id="channelContextMenu" Template="cactusTemplate">
+	<Item OnClick=@leaveChannelClick>Leave Channel</Item>
+</ContextMenu>
 
 @code {
 	[Inject]
@@ -51,7 +57,6 @@
 	IMessengerService messengerService { get; set; }
 	[Inject]
 	private EventService eventService { get; set; }
-	Account user;
 	ChannelDTO_Output[] channels = [];
 	Action tokenChangeAction;
 	bool loggedIn;
@@ -114,6 +119,16 @@
 			channels = [];
 		}
 		await InvokeAsync(this.StateHasChanged);
+	}
+
+	private async Task leaveChannelClick(ItemClickEventArgs e)
+	{
+		string channelId = e.ContextMenuTrigger.Id;
+		await messengerService.RemoveUserFromChannel(Guid.Parse(channelId), user.Id, user.Id);
+		if (navigationManager.Uri.EndsWith($"channel/{channelId}"))
+		{
+			navigationManager.NavigateTo("/");
+		}
 	}
 
 	public void Dispose()
