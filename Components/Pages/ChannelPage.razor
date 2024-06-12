@@ -7,6 +7,7 @@
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Text.RegularExpressions
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IJSRuntime jsRuntime
 @inherits AuthorizedPage
@@ -37,6 +38,12 @@
 						<div class="messageContent">
 							<span class="messageContent">@message.Content</span>
 						</div>
+						@if (getEmbedUrl(message.Content) is not null)
+						{
+							<iframe width="420" height="315"
+									src=@getEmbedUrl(message.Content)>
+							</iframe>
+						}
 					</ContextMenuTrigger>
 				</li>
 			}
@@ -100,6 +107,7 @@
 	Action<ChannelDTO_Output> onMessageAction;
 	ElementReference messageInput;
 	Timer refreshTimeStampTimer;
+	Regex youtubeRegex = new(@"https?://(www.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
 
 	protected async override void OnAfterRender(bool firstRender)
 	{
@@ -211,5 +219,23 @@
 	private async void copyMessageIdClick(ItemClickEventArgs e)
 	{
 		await jsRuntime.InvokeVoidAsync($"navigator.clipboard.writeText", e.ContextMenuTrigger.Id);
+	}
+
+	private string? getEmbedUrl(string message)
+	{
+		var youtubeMatch = youtubeRegex.Matches(message);
+		if (youtubeMatch.Count == 0)
+		{
+			return null;
+		}
+		else
+		{
+			return $"https://youtube.com/embed/{youtubeMatch[0].Groups[6].Value}";
+		}
+	}
+
+	private string makeLinksClickable(string message)
+	{
+		
 	}
 }

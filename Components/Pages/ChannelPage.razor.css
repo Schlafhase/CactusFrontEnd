@@ -49,18 +49,24 @@
 
 .chat .messageContent {
     text-indent: -0.35em;
+    opacity: 0.9;
 }
 
 .chat .channelName {
     background-color: rgba(0, 0, 0, 0.4);
     padding-top: 1rem;
     padding-inline: 1rem;
+    height: 85px;
 }
 
     .chat .channelName h3, p {
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+    }
+
+    .chat .channelName p {
+        transform: translate(0, -0.5em);
     }
 
 .timestamp {
