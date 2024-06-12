@@ -36,7 +36,7 @@
 							<br />
 						}
 						<div class="messageContent">
-							<span class="messageContent">@message.Content</span>
+							<span class="messageContent">@((MarkupString)makeLinksClickable(message.Content))</span>
 						</div>
 						@if (getEmbedUrl(message.Content) is not null)
 						{
@@ -107,7 +107,8 @@
 	Action<ChannelDTO_Output> onMessageAction;
 	ElementReference messageInput;
 	Timer refreshTimeStampTimer;
-	Regex youtubeRegex = new(@"https?://(www.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
+	Regex youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
+	Regex urlRegex = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
 
 	protected async override void OnAfterRender(bool firstRender)
 	{
@@ -230,12 +231,14 @@
 		}
 		else
 		{
-			return $"https://youtube.com/embed/{youtubeMatch[0].Groups[6].Value}";
+			return $"https://youtube.com/embed/{youtubeMatch[0].Groups[6].Value}?wmode=transparent";
 		}
 	}
 
 	private string makeLinksClickable(string message)
 	{
-		
+
+		string newMessage = urlRegex.Replace(message, $"<a href=\"{@"$0"}\">{@"$0"}</a>");
+		return newMessage;
 	}
 }

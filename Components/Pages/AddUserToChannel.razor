@@ -1,0 +1,30 @@
+﻿@page "/channel/{channelIdAsString}/addUser"
+@using CactusFrontEnd.Security
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@rendermode InteractiveServer
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inherits AuthorizedPage
+
+<h3>@header</h3>
+
+@code {
+	[Inject]
+	IMessengerService messengerService { get; set; }
+	[Inject]
+	NavigationManager navigationManager { get; set; }
+	[Parameter]
+	public string ChannelIdAsString { get; set; }
+	string header = "Loading...";
+
+	protected async override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}/addUser"), messengerService);
+			ChannelDTO_Output channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), this.signedToken.UserId);
+			header = $"Add user to {channel.Name}";
+			await InvokeAsync(this.StateHasChanged);
+		}
+	}
+}

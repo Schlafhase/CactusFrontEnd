@@ -5,6 +5,7 @@
         background-color: #000148;
         border-radius: 5px;
         box-shadow: none;
+        z-index: 1000;
     }
 
     .cactusMenuItem {
@@ -14,6 +15,13 @@
         .cactusMenuItem:hover {
             background-color: rgb(255, 255, 255, 0.1);
         }
+
+    html, body {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: -2;
+    }
 </style>
 
 <div class="page">

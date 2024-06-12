@@ -54,6 +54,7 @@
 
 <ContextMenu Id="channelContextMenu" Template="cactusTemplate">
 	<Item OnClick=@leaveChannelClick>Leave Channel</Item>
+	<Item OnClick=@addUserClick>Add user</Item>
 </ContextMenu>
 
 @code {
@@ -135,6 +136,12 @@
 		{
 			navigationManager.NavigateTo("/");
 		}
+	}
+
+	private async Task addUserClick(ItemClickEventArgs e)
+	{
+		string channelId = e.ContextMenuTrigger.Id;
+		navigationManager.NavigateTo($"channel/{channelId}/addUser");
 	}
 
 	public void Dispose()
