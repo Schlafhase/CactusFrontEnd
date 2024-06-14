@@ -9,21 +9,16 @@
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inherits AuthorizedPage
 
-<style>
-	.errorSpan {
-		color: red;
-		font-style: italic;
-	}
-</style>
-
 <PageTitle>Create Channel</PageTitle>
 
 <h1>Create Channel</h1>
 <div id="userSelection">
 	<span>Add users by their username </span>
-	<input type="text" id="usernameInput" @bind-value=@userName @bind-value:after=@onTextInputChange @onkeydown=@textBoxKeyboardEventHandler />
-	<input type="button" id="addUserButton" value="Add" @onclick=@addUser />
-	<span class="errorSpan">@(addUserErrorMessage != "" ? $" - {addUserErrorMessage}" : "")</span>
+	<form @onsubmit=@addUser>
+		<input type="text" id="usernameInput" @bind-value=@userName />
+		<input type="submit" id="addUserButton" value="Add" />
+	</form>
+	<span class="errorSpan">@addUserErrorMessage</span>
 	<p>Users:</p>
 	<ul>
 		@foreach (var user in users)
@@ -34,9 +29,11 @@
 		}
 	</ul>
 	<span>Name of the Channel:</span><br />
-	<input type="text" @bind-value=@channelName />
-	<input type="button" value="Create" @onclick=@create />
-	<span class="errorSpan">@(errorMessage != "" ? $" - {errorMessage}" : "")</span>
+	<form @onsubmit=@create >
+		<input type="text" @bind-value=@channelName />
+		<input type="submit" value="Create" />
+	</form>
+	<span class="errorSpan">@errorMessage</span>
 </div>
 
 @code {
@@ -51,7 +48,6 @@
 	string channelName;
 	string errorMessage = string.Empty;
 	string addUserErrorMessage = string.Empty;
-	bool enterPressed;
 
 	protected async override void OnAfterRender(bool firstRender)
 	{
@@ -76,7 +72,6 @@
 				throw new KeyNotFoundException();
 			}
 			Account user = await messengerService.GetAccountByUsername(userName);
-			enterPressed = false;
 			userName = "";
 			if (users.Where(usr => usr.Id == user.Id).Count() > 0)
 			{
@@ -128,24 +123,6 @@
 			return;
 		}
 		var channelId = await messengerService.CreateChannel(users.Select(usr => usr.Id).ToHashSet(), this.signedToken.UserId, channelName);
-		eventService.ChannelsHaveChanged();
 		navigationManager.NavigateTo($"channel/{channelId.ToString()}");
-	}
-
-	private async void textBoxKeyboardEventHandler(KeyboardEventArgs args)
-	{
-		if (args.Key == "Enter")
-		{
-			enterPressed = true;
-			await addUser();
-		}
-	}
-
-	private async void onTextInputChange()
-	{
-		if (enterPressed)
-		{
-			await addUser();
-		}
 	}
 }

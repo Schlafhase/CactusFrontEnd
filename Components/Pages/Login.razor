@@ -8,21 +8,16 @@
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 
-<style>
-	.errorSpan {
-		color: red;
-		font-style: italic;
-	}
-</style>
-
 <PageTitle>Login</PageTitle>
 <h3>Login</h3>
 <p>If you don't have an account yet you can create one <a href=@($"createAccount?redirectUrl={RedirectUrl}")>here</a>.</p>
-<label for="userIdInput">User: </label>
-<input type="text" id="userIdInput" name="userIdInput" @bind-value="username"/><br />
-<label for="passwordInput">Password: </label>
-<input type="password" id="passwordInput" name="passwordInput" @bind-value="password"/><br />
-<input type="submit" value="Login" @onclick="login" /><span class="errorSpan">@(errorString != "" ? $" - {errorString}" : "")</span>
+<form @onsubmit=@login>
+	<label for="userIdInput">User: </label>
+	<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" /><br />
+	<label for="passwordInput">Password: </label>
+	<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" /><br />
+	<input type="submit" value="Login" /><span class="errorSpan">@(errorString != "" ? $" - {errorString}" : "")</span>
+</form>
 
 @code {
 	private string password;

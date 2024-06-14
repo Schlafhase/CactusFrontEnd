@@ -8,6 +8,7 @@
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using System.Text.RegularExpressions
+@using System.Web
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IJSRuntime jsRuntime
 @inherits AuthorizedPage
@@ -40,8 +41,8 @@
 						</div>
 						@if (getEmbedUrl(message.Content) is not null)
 						{
-							<iframe width="420" height="315"
-									src=@getEmbedUrl(message.Content)>
+							<iframe style="border-radius: 20px;" width="420" height="315"
+									src=@getEmbedUrl(message.Content) allowfullscreen>
 							</iframe>
 						}
 					</ContextMenuTrigger>
@@ -49,7 +50,9 @@
 			}
 		</ul>
 		<div id="messageInput">
-			<input @bind-value:after=@onTextInputChange id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent" @onkeydown=@textBoxKeyboardEventHandler><input type="button" id="sendButton" value="Send" @onclick=@send />
+			<form @onsubmit=@send>
+				<input id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent" ><input type="submit" id="sendButton" value="Send" />
+			</form>
 		</div>
 	</div>
 </div>
@@ -102,7 +105,6 @@
 	string channelMembers = "";
 	string messageContent;
 	string testString = "a";
-	bool enterPressed = false;
 	int timeZoneOffset;
 	Action<ChannelDTO_Output> onMessageAction;
 	ElementReference messageInput;
@@ -170,7 +172,6 @@
 	{
 		if (!string.IsNullOrWhiteSpace(messageContent))
 		{
-			enterPressed = false;
 			Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
 			messageContent = "";
 			await messengerService.PostMessage(msg, user.Id);
@@ -192,23 +193,6 @@
 	{
 		messengerService.OnMessage -= onMessageAction;
 		refreshTimeStampTimer?.Dispose();
-	}
-
-	private async Task textBoxKeyboardEventHandler(KeyboardEventArgs args)
-	{
-		if (args.Key == "Enter")
-		{
-			enterPressed = true;
-			await send();
-		}
-	}
-
-	private async Task onTextInputChange()
-	{
-		if (enterPressed)
-		{
-			await send();
-		}
 	}
 
 	private async Task deleteMessageClick(ItemClickEventArgs e)
@@ -238,7 +222,7 @@
 	private string makeLinksClickable(string message)
 	{
 
-		string newMessage = urlRegex.Replace(message, $"<a href=\"{@"$0"}\">{@"$0"}</a>");
+		string newMessage = urlRegex.Replace(HttpUtility.HtmlEncode(message), $"<a href=\"{@"$0"}\">{@"$0"}</a>");
 		return newMessage;
 	}
 }

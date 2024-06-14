@@ -2,6 +2,5 @@
 -adming control panel
 -channel details page
 -global channel
--user zu channel adden
 -context menu für ios (?)
--the weird discord thing maybe
+-fix enter sending (html form)

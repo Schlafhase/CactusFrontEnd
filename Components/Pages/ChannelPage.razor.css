@@ -40,6 +40,7 @@
         word-break: break-word;
         list-style-type: none;
         padding: 0;
+        margin: 0;
     }
 
 .authorName {
@@ -71,6 +72,7 @@
 .timestamp {
     opacity: 0.5;
     word-break: keep-all;
+    text-indent: -1.35em;
 }
 
 #messageInput {
@@ -80,6 +82,7 @@
 #messageInputTextBox {
     transform: translate(0.5rem, 0);
     padding-inline: 1rem;
+    padding-top: 0;
     box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
     width: calc((100% - 70px) - 1rem);
     border-radius: 6px;

@@ -9,23 +9,18 @@
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inherits AuthorizedPage
 
-<style>
-	.errorSpan {
-		color: red;
-		font-style: italic;
-	}
-</style>
-
 <PageTitle>Create Account</PageTitle>
 <h3>Create Account</h3>
-
-<label for="userIdInput">Username: </label>
-<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" />
-<br />
-<label for="passwordInput">Password: </label>
-<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" />
-<br />
-<input type="submit" value="Create Account" @onclick="create" /><span class="errorSpan">@(errorString != "" ? $" - {errorString}" : "")</span>
+<form @onsubmit="create">
+	<label for="userIdInput">Username: </label>
+	<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" />
+	<br />
+	<label for="passwordInput">Password: </label>
+	<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" />
+	<br />
+	<input type="submit" value="Create Account"/>
+</form>
+<span class="errorSpan">@errorString</span>
 
 @code {
 	private string password = "";

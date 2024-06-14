@@ -144,6 +144,7 @@ namespace CactusFrontEnd.Cosmos
 			{
 				Guid channelId = Guid.NewGuid();
 				await channelRepo.CreateNew(new Channel(userIds, channelId, name));
+				eventService.ChannelsHaveChanged();
 				return channelId;
 			}
 			else
@@ -247,6 +248,8 @@ namespace CactusFrontEnd.Cosmos
 			if (channel.Users.Contains(user.Id) || user.IsAdmin)
 			{
 				channel.Users.Add(Id);
+				await channelRepo.Replace(channelId, channel);
+				eventService.ChannelsHaveChanged();
 			}
 			else
 			{
