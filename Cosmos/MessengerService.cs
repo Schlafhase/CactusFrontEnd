@@ -26,6 +26,15 @@ namespace CactusFrontEnd.Cosmos
 			this.eventService = eventService;
 		}
 
+		public async Task InitializeAsync()
+		{
+			try
+			{
+				await channelRepo.CreateNew(new Channel([CactusConstants.EveryoneId], CactusConstants.GlobalChannelId, "Global Channel"));
+			}
+			catch { }
+		}
+
 		//Message related methods
 		public async Task<MessageDTO_Output> GetMessage(Guid Id, Guid userId)
 		{
@@ -40,7 +49,7 @@ namespace CactusFrontEnd.Cosmos
 			ChannelDTO_Output channel = await getChannel(msg.ChannelId, userId);
 			Account user = await getAccount(userId);
 
-			if (channel.Users.Contains(user.Id) || user.IsAdmin)
+			if (channel.Users.Contains(user.Id) || channel.Users.Contains(CactusConstants.EveryoneId) || user.IsAdmin)
 			{
 				try
 				{
@@ -63,7 +72,7 @@ namespace CactusFrontEnd.Cosmos
 			using IDisposable _ = await asyncLocker.Enter();
 			ChannelDTO_Output channel = await getChannel(message.ChannelId, userId);
 			Account user = await getAccount(userId);
-			if (channel.Users.Contains(user.Id) || user.IsAdmin)
+			if (channel.Users.Contains(user.Id) || channel.Users.Contains(CactusConstants.EveryoneId) || user.IsAdmin)
 			{
 				await messageRepo.CreateNew(message);
 				OnMessage?.Invoke(channel);
@@ -124,7 +133,7 @@ namespace CactusFrontEnd.Cosmos
 				.Where(msg => msg.ChannelId == channelId);
 
 
-			if (channel.Users.Contains(user.Id) || user.IsAdmin)
+			if (channel.Users.Contains(user.Id) || channel.Users.Contains(CactusConstants.EveryoneId) || user.IsAdmin)
 			{
 				messages = await messageRepo.ToListAsync(query);
 				return await convertMessagesToDtos(messages);
@@ -221,7 +230,7 @@ namespace CactusFrontEnd.Cosmos
 			{
 				throw new KeyNotFoundException($"Unable to find channel with Id {channelId}");
 			}
-			if (channel.Users.Contains(user.Id) || user.IsAdmin)
+			if (channel.Users.Contains(user.Id) || channel.Users.Contains(CactusConstants.EveryoneId) || user.IsAdmin)
 			{
 				ChannelDTO_Output channelDTO = await createChannelDTO_OutputFromChannel(channel);
 				return channelDTO;
@@ -409,15 +418,11 @@ namespace CactusFrontEnd.Cosmos
 			string[] UserNames = await Task.WhenAll(channel.Users
 				.Select(async userId =>
 				{
+					if (userId == CactusConstants.EveryoneId) return "Everyone";
 					Account user = await getAccount(userId);
 					return user.UserName;
 				}));
 			return new ChannelDTO_Output(channel, UserNames.ToHashSet());
-		}
-
-		public async Task InitializeAsync()
-		{
-
 		}
 	}
 }

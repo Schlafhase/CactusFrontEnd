@@ -1,6 +1,5 @@
 -seiten schöner machen
--adming control panel
+-admin control panel
 -channel details page
 -global channel
 -context menu für ios (?)
--fix enter sending (html form)

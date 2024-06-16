@@ -36,6 +36,13 @@
 					</div>
 				</NavLink>
 			</div>
+			<div class="nav-item px-3">
+				<NavLink class="nav-link" href="channel/00000000-0000-0000-0000-000000000005">
+					<div class="navLink">
+						<span class="bi bi-global-nav-menu" aria-hidden="true"></span> Global Channel
+					</div>
+				</NavLink>
+			</div>
 			@foreach (var channel in channels)
 			{
 				<ContextMenuTrigger id=@channel.Id.ToString() MenuId="channelContextMenu">
