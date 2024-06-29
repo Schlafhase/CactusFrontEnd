@@ -77,7 +77,7 @@ namespace CactusFrontEnd.Utils
 			}
 			else if (diff.Days >= 1)
 			{
-				return $"{diff.Days} " + (diff.Days != 1 ? "days" : "day") + $" ago at " + (date1.Hour > 9 ? date1.Hour.ToString() : "0" + date1.Hour.ToString()) + ":" + (date1.Minute > 9 ? date1.Minute.ToString() : "0" + date1.Minute.ToString());
+				return $"{date2.Date.Day - date1.Date.Day} " + (diff.Days != 1 ? "days" : "day") + $" ago at " + (date1.Hour > 9 ? date1.Hour.ToString() : "0" + date1.Hour.ToString()) + ":" + (date1.Minute > 9 ? date1.Minute.ToString() : "0" + date1.Minute.ToString());
 			}
             else if (diff.Hours >= 1)
             {
