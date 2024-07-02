@@ -70,19 +70,24 @@ namespace CactusFrontEnd.Utils
 		public static string Relativize(DateTime date1, DateTime date2)
 		{
 			TimeSpan diff = date2 - date1;
+			TimeSpan dayDiff = date2.Date - date1.Date;
 
-			if (diff.Days > 7)
+			if (dayDiff.Days > 7)
 			{
 				return date1.ToString();
 			}
-			else if (diff.Days >= 1)
+			else if (dayDiff.Days >= 1)
 			{
-				return $"{date2.Date.Day - date1.Date.Day} " + (diff.Days != 1 ? "days" : "day") + $" ago at " + (date1.Hour > 9 ? date1.Hour.ToString() : "0" + date1.Hour.ToString()) + ":" + (date1.Minute > 9 ? date1.Minute.ToString() : "0" + date1.Minute.ToString());
+				return $"{dayDiff.Days} " + (diff.Days != 1 ? "days" : "day") + $" ago at " + (date1.Hour > 9 ? date1.Hour.ToString() : "0" + date1.Hour.ToString()) + ":" + (date1.Minute > 9 ? date1.Minute.ToString() : "0" + date1.Minute.ToString());
 			}
             else if (diff.Hours >= 1)
             {
 				return $"{diff.Hours} " + (diff.Hours != 1 ? "hours" : "hour") + " ago";
             }
+			else if(diff.Minutes == 0)
+			{
+				return "now";
+			}
 			else
 			{
 				return $"{diff.Minutes} " + (diff.Minutes != 1 ? "minutes" : "minute") + " ago";
