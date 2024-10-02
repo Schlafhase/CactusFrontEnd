@@ -307,6 +307,11 @@ namespace CactusFrontEnd.Cosmos
 
 		public async Task<Guid> CreateAccount(string username, string password)
 		{
+			return await CreateAccount(username, password, null);
+		}
+
+		public async Task<Guid> CreateAccount(string username, string password, string? email)
+		{
 
 			using IDisposable _ = await asyncLocker.Enter();
 			try
@@ -317,7 +322,7 @@ namespace CactusFrontEnd.Cosmos
 			{
 				Guid userId = Guid.NewGuid();
 				string passwordHash = Utils.Utils.GetStringSha256Hash(password + userId.ToString());
-				await accountRepo.CreateNew(new Account(username, passwordHash, userId));
+				await accountRepo.CreateNew(new Account(username, passwordHash, userId, email));
 				return userId;
 			}
 			throw new UsernameExistsException();
@@ -334,7 +339,22 @@ namespace CactusFrontEnd.Cosmos
 			}
 			else
 			{
-				throw new UnauthorizedAccessException("No permissions (Only admins can change the admin status of other users)");
+				throw new UnauthorizedAccessException("No permission (Only admins can change the admin status of other users)");
+			}
+		}
+
+		public async Task EditAccountLock(Guid Id, bool newState, Guid userId)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			Account user = await getAccount(userId);
+			if (user.IsAdmin)
+			{
+				user.Locked = newState;
+				await accountRepo.Replace(Id, user);
+			}
+			else
+			{
+				throw new UnauthorizedAccessException("Acces denied (Only admins can lock/unlock accounts)");
 			}
 		}
 

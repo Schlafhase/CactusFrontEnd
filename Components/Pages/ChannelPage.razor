@@ -9,6 +9,8 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using System.Text.RegularExpressions
 @using System.Web
+@using OptimisedImages
+@using System.Drawing
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IJSRuntime jsRuntime
 @inherits AuthorizedPage
@@ -36,9 +38,18 @@
 							<span class="timestamp" title=@(message.DateTime.AddHours(timeZoneOffset).ToString())>@Utils.Relativize(message.DateTime.AddHours(timeZoneOffset), DateTime.UtcNow.AddHours(timeZoneOffset))</span>
 							<br />
 						}
-						<div class="messageContent">
-							<span class="messageContent">@((MarkupString)makeLinksClickable(message.Content))</span>
-						</div>
+						@if (message.Content.StartsWith("(img)"))
+						{
+							<div style="background-image: url(Images/image_load.png); width: min(100%, 350px); height: 350px;border-radius:10px; margin-bottom: 10px; padding:0">
+								<img style="width: 100%; height: 100%; padding:0; border-radius:10px" id="@($"img-{message.Id}")" src="@(imageSources.ContainsKey(message.Id) ? imageSources[message.Id] : "")" />
+							</div>
+						}
+						else
+						{
+							<div class="messageContent">
+								<span class="messageContent">@((MarkupString)makeLinksClickable(message.Content))</span>
+							</div>
+						}
 						@if (getEmbedUrl(message.Content) is not null)
 						{
 							<iframe style="border-radius: 20px;"
@@ -51,7 +62,7 @@
 		</ul>
 		<div id="messageInput">
 			<form @onsubmit=@send>
-				<input id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent" ><input type="submit" id="sendButton" value="Send" />
+				<InputFile id="fileInput" @key=@(_inputFileId) accept=".png,.jpg.jpeg,.JPG" OnChange="loadImage" @oncancel="aborted" style="transform: translate(0.5rem, 0);"></InputFile><span style="float: right; color: red; font-style: italic;">@messageSendError</span><input id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent"><input disabled="@sendDisabled" type="submit" id="sendButton" value=@(sendDisabled ? "Sending..." : "Send") />
 			</form>
 		</div>
 	</div>
@@ -65,7 +76,59 @@
 	<Item OnClick=@copyMessageIdClick>Copy Id</Item>
 </ContextMenu>
 
+<style>
+	#fileInput::file-selector-button {
+		height: 23px;
+		margin: 5px 0;
+		padding: 2px 16px;
+		appearance: none;
+		background-color: midnightblue;
+		border: 1px solid rgba(27, 31, 35, .15);
+		border-radius: 6px;
+		box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
+		box-sizing: border-box;
+		color: #fff;
+		cursor: pointer;
+		display: inline-block;
+		font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+		font-size: 14px;
+		font-weight: 600;
+		line-height: 20px;
+		position: relative;
+		text-align: center;
+		text-decoration: none;
+		user-select: none;
+		-webkit-user-select: none;
+		touch-action: manipulation;
+		vertical-align: middle;
+		white-space: nowrap;
+	}
+</style>
+
 <script>
+	function onPaste(e) {
+		inputFile = document.getElementById("fileInput");
+		inputFile.files = e.clipboardData.files;
+		const event = new Event('change', { bubbles: true });
+		inputFile.dispatchEvent(event);
+	}
+
+	function dropHandler(e) {
+		e.preventDefault();
+		inputFile = document.getElementById("fileInput");
+		inputFile.files = e.dataTransfer.files;
+		const event = new Event('change', { bubbles: true });
+		inputFile.dispatchEvent(event);
+	}
+
+	document.getElementById("messageInputTextBox").addEventListener("paste", onPaste);
+	document.body.addEventListener("drop", dropHandler);
+
+	function dispose() {
+		document.getElementById("messageInputTextBox").removeEventListener("paste", onPaste);
+		document.body.removeEventListener("drop", dropHandler);
+	}
+
 	window.localDate = () => {
 		var ldCurrentDate = new Date();
 		return ldCurrentDate.getFullYear() +
@@ -108,9 +171,16 @@
 	int timeZoneOffset;
 	Action<ChannelDTO_Output> onMessageAction;
 	ElementReference messageInput;
+	private string _inputFileId = Guid.NewGuid().ToString();
+	IBrowserFile img;
+	bool imgSelected = false;
 	Timer refreshTimeStampTimer;
 	Regex youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
 	Regex urlRegex = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
+	Dictionary<string, string> imgSrcs;
+	bool sendDisabled = false;
+	private Dictionary<Guid, string> imageSources = [];
+	private string messageSendError = "";
 
 	protected async override void OnAfterRender(bool firstRender)
 	{
@@ -168,13 +238,72 @@
 		}
 	}
 
+	private async Task aborted()
+	{
+		imgSelected = false;
+	}
+
+	private async Task loadImage(InputFileChangeEventArgs e)
+	{
+		img = e.File;
+		imgSelected = true;
+	}
+
+	public static byte[] ReadFully(Stream input)
+	{
+		byte[] buffer = new byte[16 * 1024];
+		using (MemoryStream ms = new MemoryStream())
+		{
+			int read;
+			while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+			{
+				ms.Write(buffer, 0, read);
+			}
+			return ms.ToArray();
+		}
+	}
+
 	private async Task send()
 	{
-		if (!string.IsNullOrWhiteSpace(messageContent))
+		if (!sendDisabled)
 		{
-			Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
-			messageContent = "";
-			await messengerService.PostMessage(msg, user.Id);
+			sendDisabled = true;
+			if (!string.IsNullOrWhiteSpace(messageContent) && messageContent.Length <= 5000)
+			{
+				if (messageContent.StartsWith("(img)"))
+				{
+					messageContent = @"\" + messageContent;
+				}
+				Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
+				messageContent = "";
+				await messengerService.PostMessage(msg, user.Id);
+				messageSendError = "";
+			}
+			else
+			{
+				messageSendError = "Message was empty or too long (max message length: 500 characters)";
+			}
+			if (imgSelected)
+			{
+				try
+				{
+					using MemoryStream ms = new MemoryStream();
+					await img.OpenReadStream(15728640L).CopyToAsync(ms);
+					using Image image = Image.FromStream(ms);
+					Optimg opt = Optimg.FromImage(image);
+					string compr = opt.Compress();
+					Message msg = new(Guid.NewGuid(), $"(img){compr}", DateTime.UtcNow, user.Id, channel.Id);
+					await messengerService.PostMessage(msg, user.Id);
+					messageSendError = "";
+				}
+				catch
+				{
+					messageSendError = "Failed to send image. This might be caused by sending an unaccepted file format or sending a too large image. (accepted file formats: png, jpg, jpeg; max file size: 15mb)";
+				}
+				imgSelected = false;
+				_inputFileId = Guid.NewGuid().ToString();
+			}
+			sendDisabled = false;
 		}
 	}
 
@@ -184,6 +313,19 @@
 		{
 			messages = await messengerService.GetAllMessagesInChannel(channel.Id, user.Id);
 			messages = messages.OrderByDescending(o => o.DateTime).ToArray();
+			Thread imageLoadThread = new(async () =>
+			{
+				Thread.CurrentThread.IsBackground = true;
+				foreach (var message in messages)
+				{
+					if (message.Content.StartsWith("(img)") && !imageSources.ContainsKey(message.Id))
+					{
+						imageSources[message.Id] = getImage(message.Content);
+						await InvokeAsync(this.StateHasChanged);
+					}
+				}
+			});
+			imageLoadThread.Start();
 			await InvokeAsync(this.StateHasChanged);
 		}
 		catch { }
@@ -193,6 +335,7 @@
 	{
 		messengerService.OnMessage -= onMessageAction;
 		refreshTimeStampTimer?.Dispose();
+		imageSources.Clear();
 	}
 
 	private async Task deleteMessageClick(ItemClickEventArgs e)
@@ -221,8 +364,30 @@
 
 	private string makeLinksClickable(string message)
 	{
-
-		string newMessage = urlRegex.Replace(HttpUtility.HtmlEncode(message), $"<a href=\"{@"$0"}\">{@"$0"}</a>");
+		string newMessage = urlRegex.Replace(HttpUtility.HtmlEncode(message), $"<a href=\"{@""}\">{@"	"}</a>");
+		newMessage = newMessage.Replace(@"\(img)", "(img)");
 		return newMessage;
+	}
+
+	private string getImage(string content)
+	{
+	try
+	{
+		string data = content.Substring(5);
+		Optimg optimg = Optimg.FromString(data);
+		Bitmap img = optimg.ToImage();
+		byte[] bytes;
+		using (var stream = new MemoryStream())
+		{
+			img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+			bytes = stream.ToArray();
+		}
+		var b64String = Convert.ToBase64String(bytes);
+		return "data:image/png;base64," + b64String;
+	}
+	catch
+	{
+		return "";
+	}
 	}
 }

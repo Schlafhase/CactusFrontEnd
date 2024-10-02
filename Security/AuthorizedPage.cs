@@ -1,4 +1,5 @@
-﻿using CactusFrontEnd.Cosmos;
+﻿using CactusFrontEnd.Components;
+using CactusFrontEnd.Cosmos;
 using Messenger;
 using MessengerInterfaces;
 using Microsoft.AspNetCore.Components;
@@ -10,11 +11,17 @@ namespace CactusFrontEnd.Security
 {
     public abstract class AuthorizedPage: ComponentBase
     {
-        private string tokenString;
+		[Inject]
+		private NavigationManager navigationManager { get; set; }
+		[Inject]
+		private EventService eventService { get; set; }
+        [Inject]
+        private ProtectedLocalStorage ProtectedLocalStore { get; set; }
+		private string tokenString;
         protected SignedToken signedToken;
         protected Account user;
 
-        public async Task Initialize(ProtectedLocalStorage protectedLocalStore, Action action, IMessengerService messengerService)
+		public async Task Initialize(ProtectedLocalStorage protectedLocalStore, Action action, IMessengerService messengerService)
         {
             //Action gets called when the user is unauthorized
             ProtectedBrowserStorageResult<string> result;
@@ -42,6 +49,18 @@ namespace CactusFrontEnd.Security
             {
 				action.Invoke();
 				return;
+			}
+            if (user.Locked)
+            {
+				try
+				{
+					await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
+					eventService.TokenHasChanged();
+				}
+				finally
+				{
+					navigationManager.NavigateTo("accountLocked");
+				}
 			}
 
             TokenVerification.AuthorizeUser(tokenString, action);
