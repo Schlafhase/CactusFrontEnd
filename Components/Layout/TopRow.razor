@@ -12,9 +12,24 @@
 }
 else
 {
-	<a>@user.UserName</a>
+	<a id="settings" href="settings"></a>
+	<a href="settings" style="color: white; text-decoration: none;">@user.UserName</a>
 	<a href="logout">Log out</a>
 }
+
+
+<style>
+	#settings {
+		width: 24px;
+		height: 24px;
+		position: absolute;
+		left: 0;
+		font-size: 30px;
+		color: black;
+		background: url(Images/settings.png);
+		background-size: cover;
+	}
+</style>
 
 @code {
 	private string? token;

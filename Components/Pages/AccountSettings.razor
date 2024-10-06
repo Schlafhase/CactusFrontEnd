@@ -11,16 +11,15 @@
 			 OverlayOpacity="0.5"
 			 CloseOnOverlayClick="true"
 			 CloseOnEscapeKey="true"
-			 ShowCloseButton="false"
-			 Width="500">
+			 ShowCloseButton="false">
 	<Header>
 		<h4>@(string.IsNullOrWhiteSpace(user.Email) ? "Add Email Address" : "Change Email Address")</h4>
 	</Header>
 	<Content>
-		Enter your email address: <input class="form-control" @bind="email">
+		Enter your @(string.IsNullOrWhiteSpace(user.Email) ? "" : "new ")email address: <input class="form-control" @bind="email">
 		<span class="errorSpan">@(invalidEmailAddress ? "Please provide a valid email address." : "")</span>
 		<br />
-		<button class="btn-cactus danger" @onclick="emailCancel">Cancel</button><button class="btn-cactus primary" style="float:right;" @onclick="emailAdd">@(string.IsNullOrWhiteSpace(user.Email) ? "Add Email" : "Change Email")</button>
+		<button style="float: left;" class="btn-cactus danger" @onclick="emailCancel">Cancel</button><button class="btn-cactus primary" style="float:right;" @onclick="emailAdd">@(string.IsNullOrWhiteSpace(user.Email) ? "Add Email" : "Change Email")</button>
 	</Content>
 </ModalDialog>
 
@@ -29,17 +28,16 @@
 			 OverlayOpacity="0.5"
 			 CloseOnOverlayClick="true"
 			 CloseOnEscapeKey="true"
-			 ShowCloseButton="false"
-			 Width="500">
+			 ShowCloseButton="false">
 	<Header>
 		<h4>Change Password</h4>
 	</Header>
 	<Content>
-		Enter your current password: <input class="form-control" @bind="oldPassword">
-		<span class="errorSpan">@(wrongPassword ? "Wrong Password" : "")</span>
-		Enter your current password: <input class="form-control" @bind="oldPassword">
-		<br />
-		<button class="btn-cactus danger" @onclick="changePWCancel">Cancel</button><button class="btn-cactus primary" style="float:right;" @onclick="changePW">Change</button>
+		Enter your current password: <input type="@(showOldPassword ? "text" : "password")" class="form-control passwordInput" @bind="oldPassword"><input class="showPassword" type="button" style="background: url(Images/@(showOldPassword ? "eye-icon.svg" : "eye-blind-icon.svg")) no-repeat; background-size: 20px;" @onclick="@(() => showOldPassword = !showOldPassword)"></input>
+		<span class="errorSpan">@(wrongPassword ? "Wrong password." : "")</span><br />
+		Enter your new password: <input type="@(showNewPassword ? "text" : "password")" class="form-control passwordInput" @bind="newPassword"><input class="showPassword" type="button" style="background: url(Images/@(showNewPassword ? "eye-icon.svg" : "eye-blind-icon.svg")) no-repeat; background-size: 20px;" @onclick="@(() => showNewPassword = !showNewPassword)"></input>
+		<span class="errorSpan">@(invalidPassword ? "Please provide a password with at least 4 characters." : "")</span><br />
+		<button style="float: left;" class="btn-cactus danger" @onclick="changePWCancel">Cancel</button><button class="btn-cactus primary" style="float:right;" @onclick="changePW">Change</button>
 	</Content>
 </ModalDialog>
 
@@ -69,7 +67,7 @@
 		</Content>
 	</Alert>
 	<br />
-	<button class="btn-cactus" @onclick="@changePW">Change Password</button>
+	<button class="btn-cactus" @onclick="@onChangePWButton">Change Password</button>
 	<br />
 }
 else
@@ -79,10 +77,6 @@ else
 </div>
 
 <style>
-	.bmodal-content {
-		color: black;
-	}
-
 	button {
 		margin: 10px 0;
 	}
@@ -99,7 +93,10 @@ else
 	private string email = "";
 	private string oldPassword = "";
 	private string newPassword = "";
+	private bool showOldPassword = false;
+	private bool showNewPassword = false;
 	private bool wrongPassword = false;
+	private bool invalidPassword = false;
 	private ModalDialog _dialog;
 	private ModalDialog _dialogPWChange;
 	private bool emailAlertVisible = false;
@@ -124,6 +121,8 @@ else
 		await _dialog.Close();
 		email = "";
 		invalidEmailAddress = false;
+		showOldPassword = false;
+		showNewPassword = false;
 		await InvokeAsync(this.StateHasChanged);
 	}
 
@@ -138,12 +137,34 @@ else
 		oldPassword = "";
 		newPassword = "";
 		wrongPassword = false;
+		invalidPassword = false;
 	}
 
 	private async Task changePW()
 	{
-
+		if (await messengerService.LoginAccount(user.Id, oldPassword))
+		{
+			wrongPassword = false;
+			if (newPassword.Length >= 4)
+			{
+				invalidPassword = false;
+				await messengerService.ChangePW(user.Id, user.Id, newPassword);
+				await _dialogPWChange.Close();
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
+			else
+			{
+				invalidPassword = true;
+			}
+		}
+		else
+		{
+			wrongPassword = true;
+		}
+		await InvokeAsync(this.StateHasChanged);
 	}
+	
 
 	private async Task emailAdd()
 	{

@@ -6,6 +6,7 @@
 @using EmailService;
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Text.RegularExpressions
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inherits AuthorizedPage
 
@@ -14,24 +15,41 @@
 <form @onsubmit="create">
 	<label for="userIdInput">Username: </label>
 	<br />
-	<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" /><br/>
+	<input class="form-control accountInput" type="text" id="userIdInput" name="userIdInput" @bind-value="username" /><br />
 	<label for="passwordInput">Password: </label>
 	<br />
-	<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" /><br/>
-	<label for="descriptionInput">Who are you/Why do you want to create an Account:</label>
+	<input class="form-control accountInput passwordInput" type="@(showPassword ? "text" : "password")" id="passwordInput" name="passwordInput" @bind-value="password" /><input class="showPassword" type="button" style="background: url(Images/@(showPassword ? "eye-icon.svg" : "eye-blind-icon.svg")) no-repeat; background-size: 20px;" @onclick="@(() => showPassword = !showPassword)"></input>
 	<br />
-	<textarea id="descriptionInput" name="descriptionInput" @bind="description" /><br/>
-	By creating an Account you agree to the <a href="tos">Terms of Service</a><br />
-	<input type="submit" disabled="@requested" value="@(!requested ? "Request Account" : "Processing...")"/>
+	<label for="emailInput">Temporary Email (Optional): </label><a style="float: right" href="emails">Learn more</a>
+	<br />
+	<input class="form-control accountInput" type="text" id="emailInput" name="emailInput" @bind-value="email" /><br />
+	<label for="descriptionInput">Who are you?/Why do you want to create an Account?:</label>
+	<br />
+	<textarea class="form-control accountInput" id="descriptionInput" name="descriptionInput" @bind="description" /><br />
+	By creating an Account you agree to the <a href="tos">Terms of Service</a><br /><br />
+	<input class="btn-cactus primary" type="submit" disabled="@requested" value="@(!requested ? "Request Account" : "Processing...")" />
+	<span class="errorSpan">@errorString</span>
 </form>
-<span class="errorSpan">@errorString</span>
+
+<style>
+	form {
+		width: min(100%, 700px);
+		background-color: #13011c;
+		border-radius: 15px;
+		padding: 20px;
+		box-shadow: 0px 0px 15px magenta;
+	}
+</style>
 
 @code {
 	private string password = "";
 	private string username = "";
+	private string email = "";
 	private string description = "";
 	private string errorString = "";
 	private bool requested = false;
+	private bool showPassword = false;
+	private Regex emailRegex = new(@"(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])");
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
 	public string? RedirectUrl { get; set; }
@@ -69,10 +87,20 @@
 				errorString = "Please provide a password with at least 4 characters.";
 				return;
 			}
+			bool addEmail = false;
+			if (!string.IsNullOrWhiteSpace(email))
+			{
+				addEmail = true;
+				if (emailRegex.Matches(email)[0].Value != email)
+				{
+					errorString = "Invalid email address.";
+					return;
+				}
+			}
 			requested = true;
 			await InvokeAsync(this.StateHasChanged);
 			Guid id = await messengerService.CreateAccount(username, password);
-			emailService.Send("linus.schneeberg@schlafhase.uk", "Account creation Request", $"<div style='padding: 5px'><h1>New account request</h1><div id='info' style='border-radius: 20px; max-width: 500px; padding: 20px; color: black; background-color: white; box-shadow: 2px 2px 5px black;'><b>Username: </b><span>{username}</span><br/><b>Description: </b><span>{description}</span><br/><div style='padding-top: 50px;'><a style='color: white; text-decoration: none; padding: 5px 10px;background-color: blue; border-radius: 10px;float left;transform: translate(0px, -20px);' href='https://cactusmessenger.azurewebsites.net/reviewAccount?user={id}&action=accept'>Accept</a><a href='https://cactusmessenger.azurewebsites.net/reviewAccount?user={id}&action=deny' style='transform: translate(0px, -20px);color: white; text-decoration: none; padding: 5px 10px;float: right; background-color: red; border-radius: 10px;'>Deny</a></div></div>");
+			emailService.Send("linus.schneeberg@schlafhase.uk", "Account creation Request", $"<div style='padding: 5px'><h1>New account request</h1><div id='info' style='border-radius: 20px; max-width: 500px; padding: 20px; color: black; background-color: white; box-shadow: 2px 2px 5px black;'><b>Username: </b><span>{username}</span><br/><b>Description: </b><span>{description}</span><br/><div style='padding-top: 50px;'><a style='color: white; text-decoration: none; padding: 5px 10px;background-color: blue; border-radius: 10px;float left;transform: translate(0px, -20px);' href='https://cactusmessenger.azurewebsites.net/reviewAccount?user={id}&action=accept{(addEmail ? "&email=" + email : "")}'>Accept</a><a href='https://cactusmessenger.azurewebsites.net/reviewAccount?user={id}&action=deny{(addEmail ? "&email=" + email : "")}' style='transform: translate(0px, -20px);color: white; text-decoration: none; padding: 5px 10px;float: right; background-color: red; border-radius: 10px;'>Deny</a></div></div>");
 			// user = await messengerService.GetAccountByUsername(username);
 			// AuthorizationToken token = new(user.Id, DateTime.UtcNow);
 			// string tokenString = TokenVerification.GetTokenString(token);

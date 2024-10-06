@@ -1,0 +1,34 @@
+﻿@page "/emails"
+
+<PageTitle>Emails</PageTitle>
+
+<h3>Adding an email address to your account allows you to...</h3>
+
+<ul>
+	<li>be notified when your account request was processed</li>
+	<li class="wip">be notified when you receive a new message</li>
+	<li class="wip">reset your password</li>
+</ul>
+
+<h3>Temporary Email Addresses</h3>
+The temporary email address (the email address you can put in to your account request) is only used to send a notification when an admin has reviewed the request.
+After the account was reviewed, the email address has to be verified.
+
+<style>
+	.wip {
+		opacity: 0.5;
+	}
+
+	.wip::before {
+		content: "Work in progress";
+		background-color: orange;
+		border-radius: 4px;
+		opacity: 1;
+		margin-right: 5px;
+		padding: 0px 5px;
+	}
+</style>
+
+@code {
+
+}

@@ -19,6 +19,9 @@
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "action")]
 	public string action { get; set; }
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "email")]
+	public string email { get; set; }
 	[Inject]
 	NavigationManager navigationManager { get; set; }
 
@@ -26,7 +29,7 @@
 	{
 		if (firstRender)
 		{
-			await this.Initialize(() => navigationManager.NavigateTo("logout"));
+			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=reviewAccount?user={userId}&action={action}&email={email}"));
 			if (user is null)
 			{
 				navigationManager.NavigateTo("login");
@@ -60,18 +63,18 @@
 			{
 				account.Locked = false;
 				await messengerService.EditAccountLock(guid, false, user.Id);
-				if (account.Email is not null)
+				if (!string.IsNullOrWhiteSpace(email))
 				{
-					emailService.Send(account.Email, "Account unlocked - Cactus Messenger", "Your account was reviewed and unlocked by an admin!<br/> <a href='https://messenger.schlafhase.uk' style='color: white; text-decoration: none; padding: 5px 10px; background-color: blue; border-radius: 10px;'>Sign in</a>");
+					emailService.Send(email, "Account request accepted", "Your account was reviewed and unlocked by an admin!<br/> <a href='https://messenger.schlafhase.uk' style='color: white; text-decoration: none; padding: 5px 10px; background-color: blue; border-radius: 10px;'>Sign in</a>");
 				}
 				text = "The account was unlocked succesfully!";
 			}
 			else if (action == "deny")
 			{
 				await messengerService.DeleteAccount(guid);
-				if (account.Email is not null)
+				if (!string.IsNullOrWhiteSpace(email))
 				{
-					emailService.Send(account.Email, "Account request denied - Cactus Messenger", "Your account was reviewed and deleted by an admin!<br/> <a href='https://schlafhase.uk#contact' style='color: white; text-decoration: none; padding: 5px 10px; background-color: lime; border-radius: 10px;'>Contact me</a> if you think this choice was unfair.");
+					emailService.Send(email, "Account request denied", "Your account was reviewed and deleted by an admin.<br/> <a href='https://schlafhase.uk#contact' style='color: white; text-decoration: none; padding: 5px 10px; background-color: lime; border-radius: 10px;'>Contact me</a> if you think this choice was unfair.");
 				}
 				text = "The account was deleted succesfully!";
 			}
