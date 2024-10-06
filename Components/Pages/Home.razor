@@ -1,5 +1,6 @@
 @page "/"
 @rendermode InteractiveServer
+@using EmailService;
 @using CactusFrontEnd.Security
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -8,6 +9,13 @@
 
 <PageTitle>Home</PageTitle>
 
+<Alert
+	Type="@NotificationTypes.Warning"
+	@bind-IsVisible="@alertShown">
+	<Content>
+		@((MarkupString)errorText)
+	</Content>
+</Alert>
 <h1>Cactus Messenger</h1>
 
 Go to a channel to start messaging.
@@ -22,7 +30,7 @@ Go to a channel to start messaging.
 	{
 		if (firstRender)
 		{
-			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout"), messengerService);
+			await this.Initialize(() => navigationManager.NavigateTo($"logout"));
 		}
 	}
 }

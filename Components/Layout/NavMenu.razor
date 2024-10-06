@@ -80,7 +80,7 @@
 		if (firstRender)
 		{
 			loggedIn = true;
-			await this.Initialize(ProtectedLocalStore, () => loggedIn = false, messengerService);
+			await this.Initialize(() => loggedIn = false);
 			tokenChangeAction = async () =>
 			{
 				await refresh();
@@ -113,12 +113,12 @@
 		if (token is not null)
 		{
 			loggedIn = true;
-			SignedToken signedToken = TokenVerification.GetTokenFromString(token);
+			SignedToken<AuthorizationToken> signedToken = TokenVerification.GetTokenFromString<AuthorizationToken>(token);
 			try
 			{
-				user = await messengerService.GetAccount(signedToken.UserId);
+				user = await messengerService.GetAccount(signedToken.Token.UserId);
 			}
-			catch (KeyNotFoundException)
+			catch (Exception ex)
 			{
 				loggedIn = false;
 				channels = [];

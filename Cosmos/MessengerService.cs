@@ -328,14 +328,15 @@ namespace CactusFrontEnd.Cosmos
 			throw new UsernameExistsException();
 		}
 
-		public async Task EditAccountAdmin(Guid Id, bool giveAdmin, Guid userId)
+		public async Task EditAccountAdmin(Guid id, bool giveAdmin, Guid userId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
 			Account user = await getAccount(userId);
 			if (user.IsAdmin)
 			{
-				user.IsAdmin = giveAdmin;
-				await accountRepo.Replace(Id, user);
+				Account target = await getAccount(id);
+				target.IsAdmin = giveAdmin;
+				await accountRepo.Replace(id, target);
 			}
 			else
 			{
@@ -343,18 +344,52 @@ namespace CactusFrontEnd.Cosmos
 			}
 		}
 
-		public async Task EditAccountLock(Guid Id, bool newState, Guid userId)
+		public async Task EditAccountLock(Guid id, bool newState, Guid userId)
 		{
 			using IDisposable _ = await asyncLocker.Enter();
 			Account user = await getAccount(userId);
 			if (user.IsAdmin)
 			{
-				user.Locked = newState;
-				await accountRepo.Replace(Id, user);
+				Account target = await getAccount(id);
+				target.Locked = newState;
+				await accountRepo.Replace(id, target);
 			}
 			else
 			{
 				throw new UnauthorizedAccessException("Acces denied (Only admins can lock/unlock accounts)");
+			}
+		}
+
+		public async Task EditAccountEmail(Guid id, string email, Guid userId)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			Account user = await getAccount(userId);
+			if (user.IsAdmin || user.Id == id)
+			{
+				Account target = await getAccount(id);
+				target.Email = email;
+				await accountRepo.Replace(id, target);
+			}
+			else
+			{
+				throw new UnauthorizedAccessException($"Acces denied (Only admins or the owner of the account with ID {id} can change the email adress of this account.");
+			}
+		}
+
+		public async Task ChangePW(Guid Id, Guid userId, string newPW)
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			Account user = await getAccount(userId);
+			if (user.IsAdmin || user.Id == Id)
+			{
+				Account target = await getAccount(Id);
+				string passwordHash = Utils.Utils.GetStringSha256Hash(newPW + Id.ToString());
+				target.PasswordHash = passwordHash;
+				await accountRepo.Replace(Id, target);
+			}
+			else
+			{
+				throw new UnauthorizedAccessException("Acces denied (Only the owner of the account/admins can edit the password of an account)");
 			}
 		}
 

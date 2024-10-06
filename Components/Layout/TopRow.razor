@@ -45,8 +45,8 @@ else
 			{
 				try
 				{
-					SignedToken signedToken = TokenVerification.GetTokenFromString(token);
-					user = await messengerService.GetAccount(signedToken.UserId);
+					SignedToken<AuthorizationToken> signedToken = TokenVerification.GetTokenFromString<AuthorizationToken>(token);
+					user = await messengerService.GetAccount(signedToken.Token.UserId);
 				}
 				catch
 				{

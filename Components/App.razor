@@ -6,6 +6,83 @@
 		color: red;
 		font-style: italic;
 	}
+
+    .btn-cactus {
+        height: 35px;
+        appearance: none;
+        background-color: #000aca;
+        border: 1px solid rgba(27, 31, 35, .15);
+        border-radius: 6px;
+        box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
+        box-sizing: border-box;
+        color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+        padding: 6px 16px;
+        position: relative;
+        text-align: center;
+        text-decoration: none;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+        .btn-cactus:focus:not(:focus-visible):not(.focus-visible) {
+            box-shadow: none;
+            outline: none;
+        }
+
+        .btn-cactus:hover {
+            background-color: #00559d;
+        }
+
+        .btn-cactus:focus {
+            box-shadow: rgba(46, 164, 79, .4) 0 0 0 3px;
+            outline: none;  
+        }
+
+        .btn-cactus:disabled {
+            background-color: #333062;
+            border-color: rgba(27, 31, 35, .1);
+            color: rgba(255, 255, 255, .8);
+            cursor: default;
+        }
+
+        .btn-cactus:active {
+            background-color: #0028ac;
+            box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
+        }
+
+    .danger {
+        background-color: red
+    }
+
+        .danger:hover {
+            background-color: orangered;
+        }
+
+        .danger:active {
+            background-color: red;
+        }
+
+    .primary {
+        background-color: dodgerblue;
+    }
+        
+        .primary:hover {
+            background-color: deepskyblue;
+        }
+
+        .primary:active {
+            background-color: dodgerblue;
+        }
+
 </style>
 <head>
 	<meta charset="utf-8" />

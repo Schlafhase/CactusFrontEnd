@@ -53,10 +53,10 @@
 	{
 		if (firstRender)
 		{
-			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=createChannel"), messengerService);
+			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=createChannel"));
 			if (signedToken is not null)
 			{
-				Account user = await messengerService.GetAccount(signedToken.UserId);
+				Account user = await messengerService.GetAccount(signedToken.Token.UserId);
 				users.Add(user);
 				this.StateHasChanged();
 			}
@@ -96,7 +96,7 @@
 
 	private void remove(Account user)
 	{
-		if (user.Id != signedToken.UserId)
+		if (user.Id != signedToken.Token.UserId)
 		{
 			users.Remove(user);
 			this.StateHasChanged();
@@ -122,7 +122,7 @@
 			this.StateHasChanged();
 			return;
 		}
-		var channelId = await messengerService.CreateChannel(users.Select(usr => usr.Id).ToHashSet(), this.signedToken.UserId, channelName);
+		var channelId = await messengerService.CreateChannel(users.Select(usr => usr.Id).ToHashSet(), this.signedToken.Token.UserId, channelName);
 		navigationManager.NavigateTo($"channel/{channelId.ToString()}");
 	}
 }

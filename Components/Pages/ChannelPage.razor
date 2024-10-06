@@ -3,7 +3,6 @@
 @implements IDisposable
 @using CactusFrontEnd.Components
 @using CactusFrontEnd.Utils
-@using CactusFrontEnd.Security
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -16,6 +15,13 @@
 @inherits AuthorizedPage
 
 <PageTitle>@((channel is not null ? channel.Name : "Channel") + " - Cactus Messenger")</PageTitle>
+<Alert
+	Type="@NotificationTypes.Warning"
+	@bind-IsVisible="@alertShown">
+	<Content>
+		@((MarkupString)errorText)
+	</Content>
+</Alert>
 <div class="chatContainer">
 	<div class="chat">
 		<div class="channelName">
@@ -167,17 +173,14 @@
 	string header = "Loading...";
 	string channelMembers = "";
 	string messageContent;
-	string testString = "a";
 	int timeZoneOffset;
 	Action<ChannelDTO_Output> onMessageAction;
-	ElementReference messageInput;
 	private string _inputFileId = Guid.NewGuid().ToString();
 	IBrowserFile img;
 	bool imgSelected = false;
 	Timer refreshTimeStampTimer;
 	Regex youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
 	Regex urlRegex = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
-	Dictionary<string, string> imgSrcs;
 	bool sendDisabled = false;
 	private Dictionary<Guid, string> imageSources = [];
 	private string messageSendError = "";
@@ -205,7 +208,7 @@
 			};
 			messengerService.OnMessage += onMessageAction;
 
-			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}"), messengerService);
+			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}"));
 			if (this.signedToken is null)
 			{
 				return;
@@ -364,7 +367,19 @@
 
 	private string makeLinksClickable(string message)
 	{
-		string newMessage = urlRegex.Replace(HttpUtility.HtmlEncode(message), $"<a href=\"{@""}\">{@"	"}</a>");
+		string newMessage = "";
+		foreach (char character in HttpUtility.HtmlEncode(message))
+		{
+			if (character == '\n')
+			{
+				newMessage += "<br/>";
+			}
+			else
+			{
+				newMessage += character;
+			}
+		}
+		newMessage = urlRegex.Replace(newMessage, $"<a href=\"$1\">$1</a>");
 		newMessage = newMessage.Replace(@"\(img)", "(img)");
 		return newMessage;
 	}

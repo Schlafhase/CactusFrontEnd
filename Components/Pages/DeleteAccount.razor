@@ -24,7 +24,7 @@ Deleting your Account can't be undone. <br/>
 	{
 		if (firstRender)
 		{
-			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout"), messengerService);
+			await this.Initialize(() => navigationManager.NavigateTo($"logout"));
 		}
 	}
 

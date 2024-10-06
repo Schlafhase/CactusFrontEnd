@@ -1,5 +1,4 @@
 ﻿@page "/channel/{channelIdAsString}/addUser"
-@using CactusFrontEnd.Security
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -45,8 +44,8 @@
 	{
 		if (firstRender)
 		{
-			await this.Initialize(ProtectedLocalStore, () => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}/addUser"), messengerService);
-			channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), this.signedToken.UserId);
+			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}/addUser"));
+			channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), this.signedToken.Token.UserId);
 			header = $"Add user to {channel.Name}";
 			await InvokeAsync(this.StateHasChanged);
 		}
@@ -85,7 +84,7 @@
 
 	private void remove(Account user)
 	{
-		if (user.Id != signedToken.UserId)
+		if (user.Id != signedToken.Token.UserId)
 		{
 			users.Remove(user);
 			this.StateHasChanged();
@@ -96,7 +95,7 @@
 	{
 		foreach (var user in users)
 		{
-			await messengerService.AddUserToChannel(user.Id, channel.Id, this.signedToken.UserId);
+			await messengerService.AddUserToChannel(user.Id, channel.Id, this.signedToken.Token.UserId);
 		}
 		navigationManager.NavigateTo($"channel/{channel.Id}");
 	}

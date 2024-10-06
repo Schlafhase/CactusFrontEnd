@@ -1,10 +1,12 @@
 ﻿namespace CactusFrontEnd.Security
 {
-	public class SignedToken: AuthorizationToken
+	public class SignedToken<T> : ISignedToken where T : IToken
 	{
 		public byte[] Signature { get; }
-		public SignedToken(Guid userId, DateTime issuingDate, byte[] signature) : base(userId, issuingDate)
+		public T Token { get; }
+		public SignedToken(T Token, byte[] signature)
 		{
+			this.Token = Token;
 			this.Signature = signature;
 		}
 	}

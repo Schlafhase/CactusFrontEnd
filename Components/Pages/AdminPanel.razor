@@ -1,0 +1,37 @@
+﻿@page "/adminPanel"
+@using Security
+@using Messenger
+@using MessengerInterfaces
+@inject NavigationManager navigationManager
+@inherits AuthorizedPage
+
+<h1>adminPanel</h1>
+All users:
+<ul>
+	@foreach (Account account in accounts)
+	{
+		<li></li>
+	}
+</ul>
+
+@code {
+	private Account[] accounts;
+
+	protected async override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await this.Initialize(() => navigationManager.NavigateTo("adminPanel"));
+			if (user is null)
+			{
+				return;
+			}
+			if (!user.IsAdmin)
+			{
+				navigationManager.NavigateTo("");
+				return;
+			}
+
+		}
+	}
+}

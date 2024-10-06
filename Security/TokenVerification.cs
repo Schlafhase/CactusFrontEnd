@@ -33,21 +33,21 @@ namespace CactusFrontEnd.Security
 			return (publicKey, privateKey);
 		}
 
-		public static string GetTokenString(AuthorizationToken token)
+		public static string GetTokenString<T>(T token) where T : IToken
 		{
 			string tokenAsString = JsonConvert.SerializeObject(token);
-			byte[] signature = TokenVerification.signData(tokenAsString);
-			SignedToken signedToken = new(token.UserId, token.IssuingDate, signature);
+			byte[] signature = signData(tokenAsString);
+			SignedToken<T> signedToken = new(token, signature);
 			string signedTokenAsString = JsonConvert.SerializeObject(signedToken);
 			string signedTokenBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(signedTokenAsString));
 			return signedTokenBase64;
 		}
 
-		public static bool ValidateToken(string signedTokenBase64)
+		public static bool ValidateToken<T>(string signedTokenBase64) where T : IToken
 		{
 			string signedTokenAsString = Encoding.UTF8.GetString(Convert.FromBase64String(signedTokenBase64));
-			SignedToken signedToken = JsonConvert.DeserializeObject<SignedToken>(signedTokenAsString);
-			AuthorizationToken token = new(signedToken.UserId, signedToken.IssuingDate);
+			SignedToken<T> signedToken = JsonConvert.DeserializeObject<SignedToken<T>>(signedTokenAsString);
+			T token = signedToken.Token;
 			string tokenAsString = JsonConvert.SerializeObject(token);
 			return verifyData(tokenAsString, signedToken.Signature, PublicKey);
 		}
@@ -55,15 +55,15 @@ namespace CactusFrontEnd.Security
 		public static void AuthorizeUser(string tokenString, Action action)
 		{
 			//action will be invoked when the user is not authorized
-			if (!ValidateToken(tokenString))
+			if (!ValidateToken<AuthorizationToken>(tokenString))
 			{
 				action.Invoke();
 			}
 		}
 
-		public static SignedToken GetTokenFromString(string base64EncodedToken)
+		public static SignedToken<T> GetTokenFromString<T>(string base64EncodedToken) where T : IToken
 		{
-			SignedToken signedToken = JsonConvert.DeserializeObject<SignedToken>(Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedToken)));
+			SignedToken<T> signedToken = JsonConvert.DeserializeObject<SignedToken<T>>(Encoding.UTF8.GetString(Convert.FromBase64String(base64EncodedToken)));
 			return signedToken;
 		}
 

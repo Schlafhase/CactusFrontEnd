@@ -2,6 +2,7 @@ using CactusFrontEnd.Components;
 using CactusFrontEnd.Cosmos;
 using CactusFrontEnd.Cosmos.utils;
 using CactusFrontEnd.FrontEndFunctions;
+using EmailService;
 using CactusFrontEnd.Security;
 using JsonNet.ContractResolvers;
 using Messenger;
@@ -9,7 +10,21 @@ using MessengerInterfaces;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
+using Majorsoft.Blazor.Components.CssEvents;
+using Majorsoft.Blazor.Components.Notifications;
+using Majorsoft.Blazor.Components.Common.JsInterop;
 
+string emailPassword;
+string dbPassword;
+
+using (StreamReader sr = new("./email.password"))
+{
+	emailPassword = sr.ReadLine();
+}
+using (StreamReader sr = new("./db.password"))
+{
+	dbPassword = sr.ReadLine();
+}
 
 TokenVerification.Initialize();
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -18,6 +33,10 @@ builder.WebHost.UseStaticWebAssets();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddCssEvents();
+builder.Services.AddNotifications();
+builder.Services.AddJsInteropExtensions();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -33,7 +52,7 @@ builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
 builder.Services.AddSingleton<IMessengerService, MessengerService>();
 builder.Services.AddSingleton<CosmosClient>(_ => new CosmosClient(
-    "AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey=A60Hjx2IJlO8FibcDgntPPJB1xkZkoS8TDmfAZOZrC9vUm4phxsTkl8VKZEHAj4ayM4ANW2h94sqACDbYa7SWw==;",
+    $"AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey={dbPassword};",
     new CosmosClientOptions
     {
         Serializer = new CosmosNewtonsoftJsonSerializer(new JsonSerializerSettings
@@ -42,6 +61,7 @@ builder.Services.AddSingleton<CosmosClient>(_ => new CosmosClient(
             ContractResolver = new PrivateSetterContractResolver()
 		})
     }));
+builder.Services.AddSingleton<EmailService.EmailService>(_ => new(emailPassword));
 builder.Services.AddBlazorContextMenu(options =>
 {
 	options.ConfigureTemplate("cactusTemplate", template =>

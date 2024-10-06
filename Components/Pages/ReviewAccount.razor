@@ -1,0 +1,85 @@
+﻿@page "/reviewAccount"
+@using Messenger
+@using MessengerInterfaces
+@using EmailService
+@inject IMessengerService messengerService
+@inject EmailService emailService
+@rendermode InteractiveServer
+@inherits AuthorizedPage
+
+<PageTitle>Review Account</PageTitle>
+<h1>Review Account</h1>
+<p>@text</p>
+
+@code {
+	private string text;
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "user")]
+	public string userId { get; set; }
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "action")]
+	public string action { get; set; }
+	[Inject]
+	NavigationManager navigationManager { get; set; }
+
+	protected async override void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await this.Initialize(() => navigationManager.NavigateTo("logout"));
+			if (user is null)
+			{
+				navigationManager.NavigateTo("login");
+				return;
+			}
+			if (!user.IsAdmin)
+			{
+				text = "No permission to view this page";
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
+			if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(action))
+			{
+				text = "Invalid query";
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
+			Account account;
+			Guid guid = Guid.Parse(userId);
+			try
+			{
+				account = await messengerService.GetAccount(guid);
+			}
+			catch (Exception ex)
+			{
+				text = ex.Message;
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
+			if (action == "accept")
+			{
+				account.Locked = false;
+				await messengerService.EditAccountLock(guid, false, user.Id);
+				if (account.Email is not null)
+				{
+					emailService.Send(account.Email, "Account unlocked - Cactus Messenger", "Your account was reviewed and unlocked by an admin!<br/> <a href='https://messenger.schlafhase.uk' style='color: white; text-decoration: none; padding: 5px 10px; background-color: blue; border-radius: 10px;'>Sign in</a>");
+				}
+				text = "The account was unlocked succesfully!";
+			}
+			else if (action == "deny")
+			{
+				await messengerService.DeleteAccount(guid);
+				if (account.Email is not null)
+				{
+					emailService.Send(account.Email, "Account request denied - Cactus Messenger", "Your account was reviewed and deleted by an admin!<br/> <a href='https://schlafhase.uk#contact' style='color: white; text-decoration: none; padding: 5px 10px; background-color: lime; border-radius: 10px;'>Contact me</a> if you think this choice was unfair.");
+				}
+				text = "The account was deleted succesfully!";
+			}
+			else
+			{
+				text = "Invalid action";
+			}
+			await InvokeAsync(this.StateHasChanged);
+		}
+	}
+}

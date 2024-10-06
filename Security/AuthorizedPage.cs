@@ -12,16 +12,20 @@ namespace CactusFrontEnd.Security
     public abstract class AuthorizedPage: ComponentBase
     {
 		[Inject]
-		private NavigationManager navigationManager { get; set; }
+		protected NavigationManager navigationManager { get; set; }
 		[Inject]
 		private EventService eventService { get; set; }
         [Inject]
-        private ProtectedLocalStorage ProtectedLocalStore { get; set; }
+        private ProtectedLocalStorage protectedLocalStore { get; set; }
+        [Inject]
+        protected IMessengerService messengerService { get; set; }
 		private string tokenString;
-        protected SignedToken signedToken;
+        protected SignedToken<AuthorizationToken> signedToken;
         protected Account user;
+        protected string errorText;
+        protected bool alertShown = false;
 
-		public async Task Initialize(ProtectedLocalStorage protectedLocalStore, Action action, IMessengerService messengerService)
+		public async Task Initialize(Action action)
         {
             //Action gets called when the user is unauthorized
             ProtectedBrowserStorageResult<string> result;
@@ -40,21 +44,23 @@ namespace CactusFrontEnd.Security
                 action.Invoke();
                 return;
             }
-            signedToken = TokenVerification.GetTokenFromString(tokenString);
             try
             {
-                user = await messengerService.GetAccount(signedToken.UserId);
+                signedToken = TokenVerification.GetTokenFromString<AuthorizationToken>(tokenString);
+                user = await messengerService.GetAccount(signedToken.Token.UserId);
             }
-            catch (KeyNotFoundException)
+            catch (Exception e)
             {
-				action.Invoke();
-				return;
-			}
+                errorText = e.Message;
+                alertShown = true;
+                action.Invoke();
+                return;
+            }
             if (user.Locked)
             {
 				try
 				{
-					await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
+					await protectedLocalStore.DeleteAsync("AuthorizationToken");
 					eventService.TokenHasChanged();
 				}
 				finally

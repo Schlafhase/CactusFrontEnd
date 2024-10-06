@@ -2,8 +2,8 @@
 @rendermode InteractiveServer
 @using CactusFrontEnd.Components.Layout
 @using CactusFrontEnd.Utils
-@using CactusFrontEnd.Security
 @using Messenger
+@using EmailService;
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ProtectedLocalStorage ProtectedLocalStore
@@ -13,20 +13,25 @@
 <h3>Create Account</h3>
 <form @onsubmit="create">
 	<label for="userIdInput">Username: </label>
-	<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" />
 	<br />
+	<input type="text" id="userIdInput" name="userIdInput" @bind-value="username" /><br/>
 	<label for="passwordInput">Password: </label>
-	<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" />
 	<br />
+	<input type="password" id="passwordInput" name="passwordInput" @bind-value="password" /><br/>
+	<label for="descriptionInput">Who are you/Why do you want to create an Account:</label>
+	<br />
+	<textarea id="descriptionInput" name="descriptionInput" @bind="description" /><br/>
 	By creating an Account you agree to the <a href="tos">Terms of Service</a><br />
-	<input type="submit" value="Create Account"/>
+	<input type="submit" disabled="@requested" value="@(!requested ? "Request Account" : "Processing...")"/>
 </form>
 <span class="errorSpan">@errorString</span>
 
 @code {
 	private string password = "";
 	private string username = "";
+	private string description = "";
 	private string errorString = "";
+	private bool requested = false;
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
 	public string? RedirectUrl { get; set; }
@@ -36,6 +41,8 @@
 	private NavigationManager navigationManager { get; set; }
 	[Inject]
 	private EventService eventService { get; set; }
+	[Inject]
+	private EmailService emailService { get; set; }
 
 	private async Task create()
 	{
@@ -62,13 +69,17 @@
 				errorString = "Please provide a password with at least 4 characters.";
 				return;
 			}
-			await messengerService.CreateAccount(username, password);
-			user = await messengerService.GetAccountByUsername(username);
-			AuthorizationToken token = new(user.Id, DateTime.UtcNow);
-			string tokenString = TokenVerification.GetTokenString(token);
-			await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
-			eventService.TokenHasChanged();
-			navigationManager.NavigateTo(RedirectUrl ?? "/");
+			requested = true;
+			await InvokeAsync(this.StateHasChanged);
+			Guid id = await messengerService.CreateAccount(username, password);
+			emailService.Send("linus.schneeberg@schlafhase.uk", "Account creation Request", $"<div style='padding: 5px'><h1>New account request</h1><div id='info' style='border-radius: 20px; max-width: 500px; padding: 20px; color: black; background-color: white; box-shadow: 2px 2px 5px black;'><b>Username: </b><span>{username}</span><br/><b>Description: </b><span>{description}</span><br/><div style='padding-top: 50px;'><a style='color: white; text-decoration: none; padding: 5px 10px;background-color: blue; border-radius: 10px;float left;transform: translate(0px, -20px);' href='https://cactusmessenger.azurewebsites.net/reviewAccount?user={id}&action=accept'>Accept</a><a href='https://cactusmessenger.azurewebsites.net/reviewAccount?user={id}&action=deny' style='transform: translate(0px, -20px);color: white; text-decoration: none; padding: 5px 10px;float: right; background-color: red; border-radius: 10px;'>Deny</a></div></div>");
+			// user = await messengerService.GetAccountByUsername(username);
+			// AuthorizationToken token = new(user.Id, DateTime.UtcNow);
+			// string tokenString = TokenVerification.GetTokenString(token);
+			// await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
+			// eventService.TokenHasChanged();
+			// navigationManager.NavigateTo(RedirectUrl ?? "/");
+			navigationManager.NavigateTo("accountLocked");
 			return;
 		}
 		errorString = "Username is taken";

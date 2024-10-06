@@ -1,6 +1,6 @@
 ﻿namespace CactusFrontEnd.Security
 {
-	public class AuthorizationToken
+	public class AuthorizationToken : IToken
 	{
 		public Guid UserId { get; private set; }
 		public DateTime IssuingDate { get; private set; }
