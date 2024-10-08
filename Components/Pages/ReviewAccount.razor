@@ -48,7 +48,17 @@
 				return;
 			}
 			Account account;
-			Guid guid = Guid.Parse(userId);
+			Guid guid;
+			try
+			{
+				guid = Guid.Parse(userId);
+			}
+			catch (FormatException ex)
+			{
+				text = ex.Message;
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
 			try
 			{
 				account = await messengerService.GetAccount(guid);
@@ -59,13 +69,20 @@
 				await InvokeAsync(this.StateHasChanged);
 				return;
 			}
+			if (!account.Locked)
+			{
+				text = "Account is not under review";
+				await InvokeAsync(this.StateHasChanged);
+				return;
+			}
 			if (action == "accept")
 			{
 				account.Locked = false;
 				await messengerService.EditAccountLock(guid, false, user.Id);
 				if (!string.IsNullOrWhiteSpace(email))
 				{
-					emailService.Send(email, "Account request accepted", "Your account was reviewed and unlocked by an admin!<br/> <a href='https://messenger.schlafhase.uk' style='color: white; text-decoration: none; padding: 5px 10px; background-color: blue; border-radius: 10px;'>Sign in</a>");
+					emailService.Send(email, "Account request accepted", EmailService.GenerateAccountReviewEmail(true));
+					emailService.Send(email, "Verify your email address", EmailService.GenerateVerificationEmail(guid, email));
 				}
 				text = "The account was unlocked succesfully!";
 			}
@@ -74,7 +91,7 @@
 				await messengerService.DeleteAccount(guid);
 				if (!string.IsNullOrWhiteSpace(email))
 				{
-					emailService.Send(email, "Account request denied", "Your account was reviewed and deleted by an admin.<br/> <a href='https://schlafhase.uk#contact' style='color: white; text-decoration: none; padding: 5px 10px; background-color: lime; border-radius: 10px;'>Contact me</a> if you think this choice was unfair.");
+					emailService.Send(email, "Account request denied", EmailService.GenerateAccountReviewEmail(false));
 				}
 				text = "The account was deleted succesfully!";
 			}

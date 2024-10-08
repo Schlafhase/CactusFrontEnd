@@ -214,6 +214,19 @@ namespace CactusFrontEnd.Cosmos
 			return await convertChannelsToDtos(channels);
 		}
 
+		public async Task<ChannelDTO_Output[]> GetAllChannels()
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			return await getAllChannels();
+		}
+
+		private async Task<ChannelDTO_Output[]> getAllChannels()
+		{
+			IQueryable<Channel> query = channelRepo.GetQueryable();
+		    List<Channel> channels = await channelRepo.ToListAsync(query);
+			return await convertChannelsToDtos(channels);
+		}
+
 		private async Task<ChannelDTO_Output> getChannel(Guid channelId, Guid userId)
 		{
 			Account user = await getAccount(userId);
@@ -277,6 +290,10 @@ namespace CactusFrontEnd.Cosmos
 
 		public async Task DeleteAccount(Guid id)
 		{
+			if (id == CactusConstants.AdminId || id == CactusConstants.DeletedId)
+			{
+				throw new ArgumentException("This account can't be deleted.");
+			}
 			using IDisposable _ = await asyncLocker.Enter();
 			//remove user from all channels
 			IQueryable<Message> messageQuery = messageRepo.GetQueryable()
@@ -405,6 +422,12 @@ namespace CactusFrontEnd.Cosmos
 			return await getAccountByUsername(username);
 		}
 
+		public async Task<Account[]> GetAllAccounts()
+		{
+			using IDisposable _ = await asyncLocker.Enter();
+			return await getAllAccounts();
+		}
+
 		private async Task<Account> getAccountByUsername(string username)
 		{
 			IQueryable<Account> q = accountRepo.GetQueryable()
@@ -428,6 +451,13 @@ namespace CactusFrontEnd.Cosmos
 				throw new KeyNotFoundException($"Unable to find Account with Id {Id}");
 			};
 			return acc;
+		}
+
+		private async Task<Account[]> getAllAccounts()
+		{
+			IQueryable<Account> q = accountRepo.GetQueryable();
+			List<Account> result = await accountRepo.ToListAsync(q);
+			return result.ToArray();
 		}
 
 		//other methods

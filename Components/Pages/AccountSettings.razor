@@ -6,6 +6,8 @@
 @inject NavigationManager navigationManager
 @inject EmailService emailService
 
+<PageTitle>Settings</PageTitle>
+
 <ModalDialog @ref="_dialog"
 			 OverlayBackgroundColor="black"
 			 OverlayOpacity="0.5"
@@ -170,11 +172,10 @@ else
 	{
 		if (!string.IsNullOrWhiteSpace(email))
 		{
-			if (emailRegex.Matches(email)[0].Value == email)
+			MatchCollection emailMatches = emailRegex.Matches(email.ToLower());
+			if (emailMatches.Count == 0 || emailMatches[0].Value != email.ToLower())
 			{
-				EmailVerifyToken token = new(email, user.Id, DateTime.UtcNow);
-				string tokenString = TokenVerification.GetTokenString(token);
-				emailService.Send(email, "Verify your email address", $"<a href='https://cactusmessenger.azurewebsites.net/verifyEmail?token={tokenString}'>Verify</a>");
+				emailService.Send(email, "Verify your email address", EmailService.GenerateVerificationEmail(user.Id, email));
 				emailAlertVisible = true;
 				email = "";
 				invalidEmailAddress = false;

@@ -10,7 +10,16 @@
     <Compile Remove="InMemoryImplementations\**" />
     <Content Remove="InMemoryImplementations\**" />
     <EmbeddedResource Remove="InMemoryImplementations\**" />
+    <EmbeddedResource Remove="Security\**" />
     <None Remove="InMemoryImplementations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Components\Layout\TopRow.razor.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Components\Layout\TopRow.razor.css" />
   </ItemGroup>
 
 
