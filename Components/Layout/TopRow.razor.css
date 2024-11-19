@@ -1,12 +1,11 @@
-﻿
-@media (min-width: 640.98px) {
-	#settings {
-		margin-left: 2rem;
-	}
+﻿@media (min-width: 640.98px) {
+    #settings {
+        margin-left: 2rem;
+    }
 }
 
 @media (max-width: 640.98px) {
-	#settings {
-		margin-left: 1.1rem;
-	}
+    #settings {
+        margin-left: 1.1rem;
+    }
 }

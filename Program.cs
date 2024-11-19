@@ -1,29 +1,28 @@
 using CactusFrontEnd.Components;
 using CactusFrontEnd.Cosmos;
 using CactusFrontEnd.Cosmos.utils;
-using CactusFrontEnd.FrontEndFunctions;
-using EmailService;
 using CactusFrontEnd.Security;
 using JsonNet.ContractResolvers;
+using Majorsoft.Blazor.Components.Common.JsInterop;
+using Majorsoft.Blazor.Components.CssEvents;
+using Majorsoft.Blazor.Components.Notifications;
 using Messenger;
 using MessengerInterfaces;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
-using Majorsoft.Blazor.Components.CssEvents;
-using Majorsoft.Blazor.Components.Notifications;
-using Majorsoft.Blazor.Components.Common.JsInterop;
 
 string emailPassword;
 string dbPassword;
 
 using (StreamReader sr = new("./email.password"))
 {
-	emailPassword = sr.ReadLine();
+	emailPassword = sr.ReadLine()!;
 }
+
 using (StreamReader sr = new("./db.password"))
 {
-	dbPassword = sr.ReadLine();
+	dbPassword = sr.ReadLine()!;
 }
 
 TokenVerification.Initialize();
@@ -32,7 +31,7 @@ builder.WebHost.UseStaticWebAssets();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+       .AddInteractiveServerComponents();
 
 builder.Services.AddCssEvents();
 builder.Services.AddNotifications();
@@ -52,33 +51,38 @@ builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
 builder.Services.AddSingleton<IMessengerService, MessengerService>();
 builder.Services.AddSingleton<CosmosClient>(_ => new CosmosClient(
-    $"AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey={dbPassword};",
-    new CosmosClientOptions
-    {
-        Serializer = new CosmosNewtonsoftJsonSerializer(new JsonSerializerSettings
-        {
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ContractResolver = new PrivateSetterContractResolver()
-		})
-    }));
-builder.Services.AddSingleton<EmailService.EmailService>(_ => new(emailPassword));
+	                                            $"AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey={dbPassword};",
+	                                            new CosmosClientOptions
+	                                            {
+		                                            Serializer = new CosmosNewtonsoftJsonSerializer(
+			                                            new JsonSerializerSettings
+			                                            {
+				                                            ConstructorHandling = ConstructorHandling
+					                                            .AllowNonPublicDefaultConstructor,
+				                                            ContractResolver = new PrivateSetterContractResolver()
+			                                            })
+	                                            }));
+builder.Services.AddSingleton<EmailService.EmailService>(_ => new EmailService.EmailService(emailPassword));
 builder.Services.AddBlazorContextMenu(options =>
-{
-	options.ConfigureTemplate("cactusTemplate", template =>
-	{
-		template.MenuCssClass = "cactusMenu";
-		template.MenuItemCssClass = "cactusMenuItem";
-	});
-});
+                                      {
+	                                      options.ConfigureTemplate("cactusTemplate", template =>
+	                                                                {
+		                                                                template.MenuCssClass = "cactusMenu";
+		                                                                template.MenuItemCssClass =
+			                                                                "cactusMenuItem";
+	                                                                });
+                                      });
 
 WebApplication app = builder.Build();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+	app.UseExceptionHandler("/Error", true);
+	// The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+	app.UseHsts();
 }
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -88,8 +92,8 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 
 
-app.MapRazorComponents<CactusFrontEnd.Components.App>()
-    .AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>()
+   .AddInteractiveServerRenderMode();
 
 app.UseHttpsRedirection();
 

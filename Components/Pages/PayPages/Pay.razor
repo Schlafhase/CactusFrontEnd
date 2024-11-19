@@ -1,0 +1,5 @@
+﻿@page "/pay"
+@rendermode InteractiveServer
+@inherits AuthorizedPage
+<h3>Pay</h3>
+<p>Balance: @(user is null ? "Loading" : user.Balance)</p>

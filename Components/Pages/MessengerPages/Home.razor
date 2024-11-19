@@ -1,0 +1,30 @@
+@page "/"
+@rendermode InteractiveServer
+@inject ProtectedLocalStorage ProtectedLocalStore
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inherits AuthorizedPage
+
+<PageTitle>Home</PageTitle>
+
+<Alert
+	Type="@NotificationTypes.Warning"
+	@bind-IsVisible="@alertShown">
+	<Content>
+		@((MarkupString)errorText)
+	</Content>
+</Alert>
+<h1>Cactus Messenger</h1>
+
+Go to a channel to start messaging.
+
+@code {
+
+	protected override async void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await Initialize(() => navigationManager.NavigateTo("logout"));
+		}
+	}
+
+}

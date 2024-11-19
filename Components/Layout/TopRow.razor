@@ -1,10 +1,9 @@
-﻿@using CactusFrontEnd.Security
-@using Messenger
+﻿@using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @implements IDisposable
 @inject ProtectedLocalStorage ProtectedLocalStore
-@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@rendermode @(new InteractiveServerRenderMode(false))
 
 @if (user is null)
 {
@@ -13,7 +12,8 @@
 else
 {
 	<a id="settings" href="settings"></a>
-	<a href="settings" style="color: white; text-decoration: none; padding-left: 10px;margin-left: 1.1rem;">@user.UserName</a>
+	<a href="settings"
+	   style="color: white; text-decoration: none; padding-left: 10px;margin-left: 1.1rem;">@user.UserName</a>
 	<a href="logout">Log out</a>
 }
 
@@ -33,21 +33,16 @@ else
 </style>
 
 @code {
-	private string? token;
-	private Account? user = default;
-	private Action tokenChangeAction;
-	[Inject]
-	private IMessengerService messengerService { get; set; }
-	[Inject]
-	private EventService eventService { get; set; }
+	private          string?           token;
+	private          Account?          user = default;
+	private          Action            tokenChangeAction;
+	[Inject] private IMessengerService messengerService { get; set; }
+	[Inject] private EventService      eventService     { get; set; }
 
-	protected async override void OnInitialized()
+	protected override async void OnInitialized()
 	{
 		await refresh();
-		tokenChangeAction = async () =>
-		{
-			await refresh();
-		};
+		tokenChangeAction          =  async () => { await refresh(); };
 		eventService.OnTokenChange += tokenChangeAction;
 	}
 
@@ -55,8 +50,9 @@ else
 	{
 		try
 		{
-			var result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			ProtectedBrowserStorageResult<string> result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
 			token = result.Value;
+
 			if (token is not null)
 			{
 				try
@@ -78,11 +74,13 @@ else
 		{
 			user = null;
 		}
-		await InvokeAsync(this.StateHasChanged);
+
+		await InvokeAsync(StateHasChanged);
 	}
 
 	public void Dispose()
 	{
 		eventService.OnTokenChange -= tokenChangeAction;
 	}
+
 }

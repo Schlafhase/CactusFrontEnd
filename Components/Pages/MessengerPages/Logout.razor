@@ -4,15 +4,14 @@
 @inject ProtectedLocalStorage ProtectedLocalStore
 
 @code {
-	[Inject]
-	private NavigationManager navigationManager { get; set; }
-	[Inject]
-	private EventService eventService { get; set; }
+	[Inject] private NavigationManager navigationManager { get; set; }
+	[Inject] private EventService      eventService      { get; set; }
+
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
 	public string? RedirectUrl { get; set; }
 
-	protected async override void OnAfterRender(bool firstRender)
+	protected override async void OnAfterRender(bool firstRender)
 	{
 		try
 		{
@@ -24,4 +23,5 @@
 			navigationManager.NavigateTo(RedirectUrl != null ? $"login?redirectUrl={RedirectUrl}" : "login");
 		}
 	}
+
 }

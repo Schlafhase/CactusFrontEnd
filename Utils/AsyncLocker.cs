@@ -1,32 +1,32 @@
-﻿namespace CactusFrontEnd.Utils
+﻿namespace CactusFrontEnd.Utils;
+
+public class AsyncLocker
 {
-	public class AsyncLocker
+	private readonly SemaphoreSlim semaphore;
+
+	public AsyncLocker()
 	{
-		private class Releaser : IDisposable
-		{
-			private readonly SemaphoreSlim semaphore;
+		semaphore = new SemaphoreSlim(1);
+	}
 
-			public Releaser(SemaphoreSlim sem)
-            {
-				this.semaphore = sem;
-            }
-            public void Dispose()
-			{
-				semaphore.Release();
-			}
-		}
+	public async Task<IDisposable> Enter()
+	{
+		await semaphore.WaitAsync();
+		return new Releaser(semaphore);
+	}
 
+	private class Releaser : IDisposable
+	{
 		private readonly SemaphoreSlim semaphore;
 
-		public AsyncLocker()
+		public Releaser(SemaphoreSlim sem)
 		{
-			this.semaphore = new SemaphoreSlim(1);
+			semaphore = sem;
 		}
 
-		public async Task<IDisposable> Enter()
+		public void Dispose()
 		{
-			await semaphore.WaitAsync();
-			return new Releaser(semaphore);
+			semaphore.Release();
 		}
 	}
 }

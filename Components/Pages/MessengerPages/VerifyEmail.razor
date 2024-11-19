@@ -1,18 +1,14 @@
 ﻿@page "/verifyEmail"
 @rendermode InteractiveServer
-@inject IMessengerService messengerService
-@using Security
-@using Messenger
-@using MessengerInterfaces
 @inherits AuthorizedPage
 
 <PageTitle>Verify Email</PageTitle>
 <h1>@header</h1>
 <Alert Type="@NotificationTypes.Warning"
-	   NotificationStyle="@NotificationStyles.Normal"
-	   ShowCloseButton="@true"
-	   AutoClose="@false"
-	   @bind-IsVisible="@alertShown">
+       NotificationStyle="@NotificationStyles.Normal"
+       ShowCloseButton="@true"
+       AutoClose="@false"
+       @bind-IsVisible="@alertShown">
 	<Content>
 		@((MarkupString)errorText)
 	</Content>
@@ -34,50 +30,53 @@
 </style>
 
 @code {
+
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "token")]
 	public string emailToken { get; set; } = "";
+
 	string header = "Loading...";
 
-	protected async override void OnAfterRender(bool firstRender)
+	protected override async void OnAfterRender(bool firstRender)
 	{
 		if (firstRender)
 		{
-			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=verifyEmail?token={emailToken}"));
+			await Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=verifyEmail?token={emailToken}"));
+
 			if (user is null)
 			{
 				return;
 			}
+
 			try
 			{
 				if (TokenVerification.ValidateToken<EmailVerifyToken>(emailToken))
 				{
 					SignedToken<EmailVerifyToken> token = TokenVerification.GetTokenFromString<EmailVerifyToken>(emailToken);
+
 					if (token.Token.UserId == user.Id)
 					{
 						await messengerService.EditAccountEmail(token.Token.UserId, token.Token.Email, user.Id);
 						header = $"The email address {token.Token.Email} was added to your account.";
-						await InvokeAsync(this.StateHasChanged);
-						return;
+						await InvokeAsync(StateHasChanged);
 					}
 					else
 					{
-						header = "Failed to add email address";
-						errorText = "Acces denied.";
+						header     = "Failed to add email address";
+						errorText  = "Acces denied.";
 						alertShown = true;
-						await InvokeAsync(this.StateHasChanged);
-						return;
+						await InvokeAsync(StateHasChanged);
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				errorText = ex.Message;
+				errorText  = ex.Message;
 				alertShown = true;
-				header = "Failed to add email address";
-				await InvokeAsync(this.StateHasChanged);
-				return;
+				header     = "Failed to add email address";
+				await InvokeAsync(StateHasChanged);
 			}
 		}
 	}
+
 }

@@ -1,14 +1,13 @@
 ﻿using System.Net;
 
-namespace CactusFrontEnd.Exceptions
-{
-	public class StatusCodeException: Exception
-	{
-        public StatusCodeException(HttpStatusCode statusCode)
-        {
-            this.StatusCode = statusCode;
-        }
+namespace CactusFrontEnd.Exceptions;
 
-		public HttpStatusCode StatusCode { get; }
+public class StatusCodeException : Exception
+{
+	public StatusCodeException(HttpStatusCode statusCode)
+	{
+		StatusCode = statusCode;
 	}
+
+	public HttpStatusCode StatusCode { get; }
 }
