@@ -73,6 +73,7 @@ builder.Services.AddBlazorContextMenu(options =>
 	                                                                });
                                       });
 
+
 WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.

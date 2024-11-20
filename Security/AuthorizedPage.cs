@@ -12,7 +12,7 @@ public abstract class AuthorizedPage : ComponentBase
 	protected          string                          errorText;
 	protected          SignedToken<AuthorizationToken> signedToken;
 	private            string                          tokenString;
-	protected          Account                         user;
+	protected          Account?                        user;
 	[Inject] protected NavigationManager               navigationManager   { get; set; }
 	[Inject] private   EventService                    eventService        { get; set; }
 	[Inject] private   ProtectedLocalStorage           protectedLocalStore { get; set; }
@@ -21,6 +21,7 @@ public abstract class AuthorizedPage : ComponentBase
 	protected async Task Initialize(Action action)
 	{
 		//Action gets called when the user is unauthorized
+
 		ProtectedBrowserStorageResult<string> result;
 
 		try
@@ -48,6 +49,7 @@ public abstract class AuthorizedPage : ComponentBase
 		}
 		catch (Exception e)
 		{
+			user       = null;
 			errorText  = e.Message;
 			alertShown = true;
 			action.Invoke();
@@ -56,6 +58,7 @@ public abstract class AuthorizedPage : ComponentBase
 
 		if (user.Locked)
 		{
+			user = null;
 			try
 			{
 				await protectedLocalStore.DeleteAsync("AuthorizationToken");

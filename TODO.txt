@@ -1,7 +1,5 @@
--seiten schöner machen
--admin control panel
 -channel details page
 -context menu für ios (?)
--optional email verfication for password resets
--account creation => account creation requests to prevent spam
+-password resets
 -cactus credits
+-channel sortieren

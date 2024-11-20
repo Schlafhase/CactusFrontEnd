@@ -14,14 +14,6 @@
         <None Remove="InMemoryImplementations\**"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <None Remove="Components\Layout\TopRow.razor.css"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="Components\Layout\TopRow.razor.css"/>
-    </ItemGroup>
-
 
     <ItemGroup>
         <PackageReference Include="Blazor.ContextMenu" Version="2.1.0"/>
@@ -35,6 +27,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\MessengerInterfaces\MessengerInterfaces.csproj"/>
+        <ProjectReference Include="..\Messenger\CactusPay\CactusPay.csproj" />
         <ProjectReference Include="..\Messenger\EmailService\EmailService.csproj"/>
         <ProjectReference Include="..\OptimisedImages\OptimisedImages.csproj"/>
     </ItemGroup>
