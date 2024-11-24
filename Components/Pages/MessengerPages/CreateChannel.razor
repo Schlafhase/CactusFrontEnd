@@ -1,11 +1,13 @@
 ﻿@page "/createChannel"
 @rendermode InteractiveServer
 @inject ProtectedLocalStorage ProtectedLocalStore
+@using CactusFrontEnd.Events
 @using Messenger
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inherits AuthorizedPage
 
 <PageTitle>Create Channel</PageTitle>
+<StreakAlert @ref="_streakAlert"></StreakAlert>
 
 <h1>Create Channel</h1>
 <div id="userSelection">

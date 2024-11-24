@@ -7,6 +7,7 @@
 @using System.Drawing.Imaging
 @using System.Text.RegularExpressions
 @using System.Web
+@using CactusFrontEnd.Events
 @using CactusFrontEnd.Utils
 @using Messenger
 @using MessengerInterfaces
@@ -15,6 +16,7 @@
 @inherits AuthorizedPage
 
 <PageTitle>@((channel is not null ? channel.Name : "Channel") + " - Cactus Messenger")</PageTitle>
+<StreakAlert @ref="_streakAlert"></StreakAlert>
 <Alert
 	Type="@NotificationTypes.Warning"
 	@bind-IsVisible="@alertShown">
@@ -179,6 +181,10 @@
 		opacity: 0.9;
 	}
 
+	.chat .message .messageContent > span > * {
+		padding-left: 0;
+	}
+
 	.chat .channelName {
 		background-color: rgba(0, 0, 0, 0.4);
 		padding-top: 1rem;
@@ -225,7 +231,9 @@
 	}
 
 	.chat .message * {
-		padding: 5px;
+		padding-left: 5px;
+		padding-top: 1px;
+		padding-bottom: 1px;
 		color: white;
 	}
 
@@ -368,7 +376,7 @@
 	string                                    header         = "Loading...";
 	string                                    channelMembers = "";
 	string                                    messageContent;
-	int                                       timeZoneOffset;
+	int                                       timeZoneOffset = 0;
 	Action<ChannelDTO_Output>                 onMessageAction;
 	private string                            _inputFileId = Guid.NewGuid().ToString();
 	IBrowserFile                              img;
@@ -380,16 +388,20 @@
 	private readonly Dictionary<Guid, string> imageSources     = [];
 	private          string                   messageSendError = "";
 
+	private bool _disposed = false;
+
 	protected override async void OnAfterRender(bool firstRender)
 	{
-		if (firstRender)
+		if (firstRender && !_disposed)
 		{
-			timeZoneOffset =  await jsRuntime.InvokeAsync<int>("timeZoneOffset");
+			// timeZoneOffset =  await jsRuntime.InvokeAsync<int>("timeZoneOffset");
+			eventService.ChannelHasChanged();
+
 			timeZoneOffset *= -1;
 			TimeSpan startTimeSpan  = TimeSpan.Zero;
 			TimeSpan periodTimeSpan = TimeSpan.FromMinutes(1);
 
-			refreshTimeStampTimer = new Timer(async a => { await InvokeAsync(StateHasChanged); }, null, startTimeSpan, periodTimeSpan);
+			refreshTimeStampTimer = new Timer(async _ => { await InvokeAsync(StateHasChanged); }, null, startTimeSpan, periodTimeSpan);
 
 			onMessageAction = async channel =>
 			                  {
@@ -400,7 +412,7 @@
 			                  };
 			messengerService.OnMessage += onMessageAction;
 
-			await Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}"));
+			await Initialize(action: authFailed);
 
 			if (signedToken is null)
 			{
@@ -421,7 +433,7 @@
 			}
 			catch (Exception ex)
 			{
-				if (ex is KeyNotFoundException || ex is FormatException)
+				if (ex is KeyNotFoundException or FormatException)
 				{
 					navigationManager.NavigateTo("Error/NotFound");
 				}
@@ -435,6 +447,11 @@
 
 			await refresh();
 		}
+	}
+
+	private void authFailed()
+	{
+		navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}");
 	}
 
 	private Task aborted()
@@ -543,9 +560,20 @@
 
 	public void Dispose()
 	{
+		_disposed = true;
+
 		messengerService.OnMessage -= onMessageAction;
 		refreshTimeStampTimer?.Dispose();
 		imageSources.Clear();
+
+		try
+		{
+			messengerService.UpdateLastRead(channel.Id, user.Id, DateTime.UtcNow);
+		}
+		catch (NullReferenceException)
+		{
+			// Do nothing
+		}
 	}
 
 	private async Task deleteMessageClick(ItemClickEventArgs e)

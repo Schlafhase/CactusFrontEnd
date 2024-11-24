@@ -5,7 +5,7 @@
 @inherits AuthorizedPage
 
 <PageTitle>Home</PageTitle>
-
+<StreakAlert @ref="_streakAlert"></StreakAlert>
 <Alert
 	Type="@NotificationTypes.Warning"
 	@bind-IsVisible="@alertShown">
@@ -16,6 +16,27 @@
 <h1>Cactus Messenger</h1>
 
 Go to a channel to start messaging.
+<div id="links">
+	<h3>Links</h3>
+	<img class="icon" src="https://cdn.worldvectorlogo.com/logos/discord-6.svg" alt=""/>
+	<a id="discordLink" class="link" href="https://discord.gg/YgY7x5Fse9">Join the discord</a><br/>
+
+	<img class="icon" src="https://schlafhase.uk/images/favicon.ico" alt=""/>
+	<a id="discordLink" class="link" href="https://schlafhase.uk">schlafhase dot uk</a>
+</div>
+
+<style>
+	#links {
+		margin-top: 100px;
+		width: fit-content;
+	}
+	
+	.icon {
+		height: 1.8rem;
+		width: 1.8rem;
+		padding-right: 5px;
+	}
+</style>
 
 @code {
 

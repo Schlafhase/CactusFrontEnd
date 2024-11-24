@@ -1,4 +1,5 @@
 ﻿using CactusFrontEnd.Components;
+using CactusFrontEnd.Events;
 using Messenger;
 using MessengerInterfaces;
 using Microsoft.AspNetCore.Components;
@@ -13,8 +14,10 @@ public abstract class AuthorizedPage : ComponentBase
 	protected          SignedToken<AuthorizationToken> signedToken;
 	private            string                          tokenString;
 	protected          Account?                        user;
+	protected          StreakAlert?                    _streakAlert;
+	protected          bool                            updateStreak = true;
 	[Inject] protected NavigationManager               navigationManager   { get; set; }
-	[Inject] private   EventService                    eventService        { get; set; }
+	[Inject] protected EventService                    eventService        { get; set; }
 	[Inject] private   ProtectedLocalStorage           protectedLocalStore { get; set; }
 	[Inject] protected IMessengerService               messengerService    { get; set; }
 
@@ -59,6 +62,7 @@ public abstract class AuthorizedPage : ComponentBase
 		if (user.Locked)
 		{
 			user = null;
+
 			try
 			{
 				await protectedLocalStore.DeleteAsync("AuthorizationToken");
@@ -70,6 +74,41 @@ public abstract class AuthorizedPage : ComponentBase
 			}
 		}
 
-		TokenVerification.AuthorizeUser(tokenString, action);
+		if (TokenVerification.AuthorizeUser(tokenString, action))
+		{
+			if (!updateStreak)
+			{
+				return;
+			}
+			// TODO: test wether it works now
+			int daysSinceLastStreakIncrease = DateTime.UtcNow.Date.Day - user.LastStreakChange.Date.Day;
+
+			switch (daysSinceLastStreakIncrease)
+			{
+				case 1:
+					await messengerService.UpdateAccountLoginStreak(user.Id, user.LoginStreak + 1);
+					user.LoginStreak++;
+					streakIncrease(user.LoginStreak);
+					break;
+				case > 1:
+					await messengerService.UpdateAccountLoginStreak(user.Id, 1);
+					streakLost(user.LoginStreak);
+					user.LoginStreak = 1;
+					break;
+			}
+
+			messengerService.UpdateAccountLastLogin(user.Id, DateTime.UtcNow);
+			user.LastLogin = DateTime.UtcNow;
+		}
+	}
+
+	protected virtual void streakIncrease(int newStreak)
+	{
+		_streakAlert?.StreakIncreaseAlert(newStreak);
+	}
+
+	protected virtual void streakLost(int prevStreak)
+	{
+		_streakAlert?.StreakLostAlert(prevStreak);
 	}
 }

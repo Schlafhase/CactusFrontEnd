@@ -1,11 +1,14 @@
 ﻿using CactusFrontEnd.Security;
 using CactusPay;
+using Microsoft.AspNetCore.Components;
 
 namespace CactusFrontEnd.Components.Pages.PayPages;
 
 public partial class Pay : AuthorizedPage
 {
-	private string paylink = "";
+	[Inject]
+	private Payment payment { get; set; }
+	private string payLink = "";
 	private float amount = 0;
 	
 	// ReSharper disable once AsyncVoidMethod
@@ -20,7 +23,7 @@ public partial class Pay : AuthorizedPage
 
 	private async Task generatePayLink()
 	{
-		paylink = Payment.GeneratePaymentLink(user.Id, Guid.NewGuid(), DateTime.Now, TimeSpan.FromMinutes(5), amount);
+		payLink = payment.GeneratePaymentLink(user.Id, Guid.NewGuid(), DateTime.Now, TimeSpan.FromMinutes(5), amount, user.Balance, "Payment", []);
 		await InvokeAsync(StateHasChanged);
 	}
 }

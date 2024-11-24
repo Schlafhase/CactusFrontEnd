@@ -6,7 +6,7 @@
 @inject EmailService emailService
 
 <PageTitle>Settings</PageTitle>
-
+<StreakAlert @ref="_streakAlert"></StreakAlert>
 <ModalDialog @ref="_dialog"
              OverlayBackgroundColor="black"
              OverlayOpacity="0.5"
@@ -104,18 +104,18 @@
 </style>
 
 @code {
-	private          string      email       = "";
-	private          string      oldPassword = "";
-	private          string      newPassword = "";
-	private          bool        showOldPassword;
-	private          bool        showNewPassword;
-	private          bool        wrongPassword;
-	private          bool        invalidPassword;
-	private          ModalDialog _dialog;
-	private          ModalDialog _dialogPWChange;
-	private          bool        emailAlertVisible;
-	private          bool        invalidEmailAddress;
-	private readonly Regex       emailRegex          = new(@"(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])");
+	private          string       email       = "";
+	private          string       oldPassword = "";
+	private          string       newPassword = "";
+	private          bool         showOldPassword;
+	private          bool         showNewPassword;
+	private          bool         wrongPassword;
+	private          bool         invalidPassword;
+	private          ModalDialog  _dialog;
+	private          ModalDialog  _dialogPWChange;
+	private          bool         emailAlertVisible;
+	private          bool         invalidEmailAddress;
+	private readonly Regex        emailRegex = new(@"(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])");
 
 	protected override async void OnAfterRender(bool firstRender)
 	{
@@ -216,5 +216,4 @@
 		emailAlertVisible = false;
 		await _dialog.Open();
 	}
-
 }

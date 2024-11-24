@@ -1,10 +1,13 @@
 ﻿@page "/channel/{channelIdAsString}/addUser"
 @rendermode InteractiveServer
 @inject ProtectedLocalStorage ProtectedLocalStore
+@using CactusFrontEnd.Events
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inherits AuthorizedPage
+
+<StreakAlert @ref="_streakAlert"></StreakAlert>
 
 <h3 style="word-break:break-word; overflow:hidden">@header</h3>
 <span>Add users by their username </span>
@@ -98,5 +101,4 @@
 
 		navigationManager.NavigateTo($"channel/{channel.Id}");
 	}
-
 }

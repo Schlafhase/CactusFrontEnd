@@ -2,4 +2,6 @@
 -context menu für ios (?)
 -password resets
 -cactus credits
--channel sortieren
+-announcement channel
+-discord bot
+-EVIL CACTUS

@@ -1,7 +1,10 @@
 using CactusFrontEnd.Components;
 using CactusFrontEnd.Cosmos;
 using CactusFrontEnd.Cosmos.utils;
+using CactusFrontEnd.Events;
 using CactusFrontEnd.Security;
+using CactusFrontEnd.Utils;
+using CactusPay;
 using JsonNet.ContractResolvers;
 using Majorsoft.Blazor.Components.Common.JsInterop;
 using Majorsoft.Blazor.Components.CssEvents;
@@ -49,7 +52,10 @@ builder.Services.AddSingleton<EventService>();
 builder.Services.AddSingleton<IRepository<Account>, CosmosAccountRepository>();
 builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
+builder.Services.AddSingleton<AsyncLocker>(_ => new AsyncLocker());
 builder.Services.AddSingleton<IMessengerService, MessengerService>();
+builder.Services.AddSingleton<PaymentService>();
+builder.Services.AddSingleton<Payment>();
 builder.Services.AddSingleton<CosmosClient>(_ => new CosmosClient(
 	                                            $"AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey={dbPassword};",
 	                                            new CosmosClientOptions
