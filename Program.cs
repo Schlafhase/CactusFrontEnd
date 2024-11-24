@@ -52,7 +52,6 @@ builder.Services.AddSingleton<EventService>();
 builder.Services.AddSingleton<IRepository<Account>, CosmosAccountRepository>();
 builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
-builder.Services.AddSingleton<AsyncLocker>(_ => new AsyncLocker());
 builder.Services.AddSingleton<IMessengerService, MessengerService>();
 builder.Services.AddSingleton<PaymentService>();
 builder.Services.AddSingleton<Payment>();

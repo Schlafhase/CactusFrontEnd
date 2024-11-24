@@ -45,7 +45,7 @@
 	{
 		@if (!deletedAccounts.Contains(account.Id))
 		{
-			<div style="max-height: @(selectedAccount == account.Id ? "200px" : "72px");" class="accountCard">
+			<div style="height: @(selectedAccount == account.Id ? "auto" : "72px");" class="accountCard">
 				<div @onclick="@(() => selectedAccount = account.Id)" class="accountMeta @account.Id">
 					<strong
 						class="accountName @(account.IsAdmin ? "admin" : "") @(account.Locked ? "locked" : "")">@account.UserName</strong><br/>
@@ -92,6 +92,9 @@
 </script>
 
 <style>
+	:root {
+		interpolate-size: allow-keywords;
+	}
 
 	body {
 		margin-bottom: 25px;
@@ -124,7 +127,7 @@
 		padding: 10px 10px;
 		border-radius: 5px;
 		margin-bottom: 2px;
-		transition: max-height 0.6s;
+		transition: height 0.6s;
 		overflow: hidden;
 	}
 
