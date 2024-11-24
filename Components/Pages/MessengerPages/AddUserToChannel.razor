@@ -43,7 +43,7 @@
 		if (firstRender)
 		{
 			await Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}/addUser"));
-			channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), signedToken.Token.UserId);
+			channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString));
 			header  = $"Add user to {channel.Name}";
 			await InvokeAsync(StateHasChanged);
 		}
@@ -96,7 +96,7 @@
 	{
 		foreach (Account user in users)
 		{
-			await messengerService.AddUserToChannel(user.Id, channel.Id, signedToken.Token.UserId);
+			await messengerService.AddUserToChannel(user.Id, channel.Id);
 		}
 
 		navigationManager.NavigateTo($"channel/{channel.Id}");

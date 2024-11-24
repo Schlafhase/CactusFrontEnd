@@ -53,6 +53,7 @@ builder.Services.AddSingleton<IRepository<Account>, CosmosAccountRepository>();
 builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
 builder.Services.AddSingleton<IMessengerService, MessengerService>();
+builder.Services.AddSingleton<IRepository<PaymentManager>, PaymentRepo>();
 builder.Services.AddSingleton<PaymentService>();
 builder.Services.AddSingleton<Payment>();
 builder.Services.AddSingleton<CosmosClient>(_ => new CosmosClient(

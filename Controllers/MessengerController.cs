@@ -20,12 +20,11 @@ public class MessengerController : ControllerBase
 
 	[HttpPost("editAccountAdminStatus")]
 	public async Task<ActionResult> EditAccountAdminStatus([FromQuery] [Required] bool giveAdmin,
-	                                                       [FromQuery] [Required] Guid userId = default,
 	                                                       [FromBody] [Required]  Guid Id     = default)
 	{
 		try
 		{
-			await messengerService.EditAccountAdmin(Id, giveAdmin, userId);
+			await messengerService.EditAccountAdmin(Id, giveAdmin);
 			return Ok();
 		}
 		catch (Exception ex)
@@ -35,11 +34,11 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpGet("getAllMessages")]
-	public async Task<ActionResult<MessageDTO_Output[]>> GetAllMessages([FromQuery] [Required] Guid userId)
+	public async Task<ActionResult<MessageDTO_Output[]>> GetAllMessages()
 	{
 		try
 		{
-			return await messengerService.GetAllMessages(userId);
+			return await messengerService.GetAllMessages();
 		}
 		catch (Exception ex)
 		{
@@ -49,12 +48,11 @@ public class MessengerController : ControllerBase
 
 	[HttpGet("{channelId}/getAllMessages")]
 	public async Task<ActionResult<MessageDTO_Output[]>> GetAllMessagesInChannel(
-		[FromRoute] [Required] Guid channelId,
-		[FromQuery] [Required] Guid userId)
+		[FromRoute] [Required] Guid channelId)
 	{
 		try
 		{
-			return await messengerService.GetAllMessagesInChannel(channelId, userId);
+			return await messengerService.GetAllMessagesInChannel(channelId);
 		}
 		catch (Exception ex)
 		{
@@ -63,8 +61,7 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpGet("getAccount")]
-	public async Task<ActionResult<Account>> GetAccount([FromQuery] [Required] Guid Id,
-	                                                    [FromQuery] [Required] Guid userId)
+	public async Task<ActionResult<Account>> GetAccount([FromQuery] [Required] Guid Id)
 	{
 		try
 		{
@@ -77,12 +74,11 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpGet("getChannel")]
-	public async Task<ActionResult<ChannelDTO_Output>> GetChannel([FromQuery] [Required] Guid channelId,
-	                                                              [FromQuery] [Required] Guid userId)
+	public async Task<ActionResult<ChannelDTO_Output>> GetChannel([FromQuery] [Required] Guid channelId)
 	{
 		try
 		{
-			ChannelDTO_Output channel = await messengerService.GetChannel(channelId, userId);
+			ChannelDTO_Output channel = await messengerService.GetChannel(channelId);
 			return channel;
 		}
 		catch (Exception ex)
@@ -93,12 +89,11 @@ public class MessengerController : ControllerBase
 
 	[HttpPost("{channelId}/addUser")]
 	public async Task<ActionResult> AddUser([FromBody] [Required]  Guid Id,
-	                                        [FromRoute] [Required] Guid channelId,
-	                                        [FromQuery] [Required] Guid userId)
+	                                        [FromRoute] [Required] Guid channelId)
 	{
 		try
 		{
-			await messengerService.AddUserToChannel(Id, channelId, userId);
+			await messengerService.AddUserToChannel(Id, channelId);
 			return Ok();
 		}
 		catch (Exception ex)
@@ -115,7 +110,7 @@ public class MessengerController : ControllerBase
 		try
 		{
 			Message message = msg.ToMessage(userId, channelId);
-			await messengerService.PostMessage(message, userId);
+			await messengerService.PostMessage(message);
 			return Ok();
 		}
 		catch (Exception ex)
@@ -138,12 +133,11 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpPost("createChannel")]
-	public async Task<ActionResult<Guid>> CreateChannel([FromBody] [Required]  HashSet<Guid> userIds,
-	                                                    [FromQuery] [Required] Guid          userId)
+	public async Task<ActionResult<Guid>> CreateChannel([FromBody] [Required]  HashSet<Guid> userIds)
 	{
 		try
 		{
-			return await messengerService.CreateChannel(userIds, userId, "");
+			return await messengerService.CreateChannel(userIds, "");
 		}
 		catch (Exception ex)
 		{

@@ -152,11 +152,12 @@
 			return;
 		}
 
-		ProtectedBrowserStorageResult<string> result;
+		string? token;
 
 		try
 		{
-			result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			ProtectedBrowserStorageResult<string> result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			token = result.Value;
 		}
 		catch (InvalidOperationException)
 		{
@@ -165,8 +166,10 @@
 			await InvokeAsync(StateHasChanged);
 			return;
 		}
-
-		string? token = result.Value;
+		catch (JSDisconnectedException)
+		{
+			token = null;
+		}
 
 		if (token is not null)
 		{
@@ -185,7 +188,7 @@
 				return;
 			}
 
-			channels = (await messengerService.GetChannelsWithUser(user.Id, user.Id)).ToList();
+			channels = (await messengerService.GetChannelsWithUser(user.Id)).ToList();
 			channels = channels.OrderByDescending(c => c.LastMessage).ToList();
 		}
 		else
@@ -200,7 +203,7 @@
 	private async Task leaveChannelClick(ItemClickEventArgs e)
 	{
 		string channelId = e.ContextMenuTrigger.Id;
-		await messengerService.RemoveUserFromChannel(Guid.Parse(channelId), user.Id, user.Id);
+		await messengerService.RemoveUserFromChannel(Guid.Parse(channelId), user.Id);
 
 		if (navigationManager.Uri.EndsWith($"channel/{channelId}"))
 		{
@@ -220,4 +223,5 @@
 		eventService.OnTokenChange       -= tokenChangeAction;
 		eventService.OnChannelListChange -= tokenChangeAction;
 	}
+
 }

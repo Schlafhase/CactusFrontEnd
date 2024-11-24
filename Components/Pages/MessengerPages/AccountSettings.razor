@@ -165,7 +165,7 @@
 			if (newPassword.Length >= 4)
 			{
 				invalidPassword = false;
-				await messengerService.ChangePW(user.Id, user.Id, newPassword);
+				await messengerService.ChangePW(user.Id, newPassword);
 				await _dialogPWChange.Close();
 				await InvokeAsync(StateHasChanged);
 				return;
@@ -206,7 +206,7 @@
 
 	private async Task removeEmail()
 	{
-		await messengerService.EditAccountEmail(user.Id, "", user.Id);
+		await messengerService.EditAccountEmail(user.Id, "");
 		user.Email = "";
 		await InvokeAsync(StateHasChanged);
 	}

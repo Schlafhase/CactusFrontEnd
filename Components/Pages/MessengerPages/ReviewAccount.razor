@@ -84,7 +84,7 @@
 			if (action == "accept")
 			{
 				account.Locked = false;
-				await messengerService.EditAccountLock(guid, false, user.Id);
+				await messengerService.EditAccountLock(guid, false);
 
 				if (!string.IsNullOrWhiteSpace(email))
 				{
