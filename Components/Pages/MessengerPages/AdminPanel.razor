@@ -3,6 +3,7 @@
 @inject IJSRuntime _jsRuntime;
 @using Messenger
 @using MessengerInterfaces
+@using Newtonsoft.Json
 @inherits AuthorizedPage
 
 <PageTitle>Control Panel</PageTitle>
@@ -29,6 +30,27 @@
 				Delete @(accounts.Where(acc => acc.Id == selectedAccount).ToArray()[0].UserName)</button>
 		</div>
 		<div style="margin-top:70px;"><code>@error</code></div>
+	</Content>
+</ModalDialog>
+
+<ModalDialog @ref="_detailDialog"
+             OverlayBackgroundColor="black"
+             OverlayOpacity="0.5"
+             CloseOnOverlayClick="true"
+             CloseOnEscapeKey="true"
+             ShowCloseButton="false">
+
+	<Header>
+		<h1 style="line-break: anywhere;">
+			<strong>@(accounts.Where(acc => acc.Id == selectedAccount).ToArray()[0].UserName)</strong></h1>
+	</Header>
+	<Content>
+		<p>
+			@((MarkupString)listDetails(accounts.Where(acc => acc.Id == selectedAccount).ToArray()[0]))
+		</p>
+		<div>
+			<button class="btn-cactus" @onclick="closeDetailDialog">Close</button>
+		</div>
 	</Content>
 </ModalDialog>
 
@@ -70,6 +92,10 @@
 						<button class="btn-cactus danger" @onclick="openDeleteDialog"
 						        disabled="@(account.Id == CactusConstants.AdminId || account.Id == CactusConstants.DeletedId)">
 							Delete
+						</button>
+
+						<button class="btn-cactus" @onclick="openDetailDialog">
+							View Details
 						</button>
 
 					</div>
@@ -159,6 +185,7 @@
 	private readonly List<Guid>    deletedAccounts = [];
 	private          Guid          selectedAccount = Guid.Empty;
 	private          ModalDialog   _dialog;
+	private          ModalDialog   _detailDialog;
 	private          string        error = "";
 
 	private async Task openDeleteDialog()
@@ -170,6 +197,21 @@
 	private async Task closeDeleteDialog()
 	{
 		await _dialog.Close();
+	}
+	
+	private async Task openDetailDialog()
+	{
+		await _detailDialog.Open();
+	}
+	
+	private async Task closeDetailDialog()
+	{
+		await _detailDialog.Close();
+	}
+
+	private static string listDetails(Account account)
+	{
+		return JsonConvert.SerializeObject(account, Formatting.Indented).Replace("\n", "<br/>");
 	}
 
 	private async Task delete()

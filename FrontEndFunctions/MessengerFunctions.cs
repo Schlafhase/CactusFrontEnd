@@ -8,29 +8,29 @@ public class MessengerFunctions
 	public static async Task SendMessage(string content, Guid channelId, Guid userId, IMessageService messageService)
 	{
 		MessageDTO_Input msg = new(content);
-		await messageService.PostMessage(msg.ToMessage(userId, channelId), userId);
+		await messageService.PostMessage(msg.ToMessage(userId, channelId));
 	}
 
 	public static async Task<MessageDTO_Output[]> GetMessages(Guid            channelId,
 	                                                          Guid            userId,
 	                                                          IMessageService messageService)
 	{
-		return await messageService.GetAllMessagesInChannel(channelId, userId);
+		return await messageService.GetAllMessagesInChannel(channelId);
 	}
 
 	public static Guid TryParseGuid(string guid)
 	{
-		Guid Id;
+		Guid id;
 
 		try
 		{
-			Id = Guid.Parse(guid);
+			id = Guid.Parse(guid);
 		}
 		catch
 		{
-			Id = CactusConstants.DeletedId;
+			id = CactusConstants.DeletedId;
 		}
 
-		return Id;
+		return id;
 	}
 }

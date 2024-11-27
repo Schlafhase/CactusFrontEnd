@@ -57,7 +57,7 @@
 
 					if (token.Token.UserId == user.Id)
 					{
-						await messengerService.EditAccountEmail(token.Token.UserId, token.Token.Email, user.Id);
+						await messengerService.EditAccountEmail(token.Token.UserId, token.Token.Email);
 						header = $"The email address {token.Token.Email} was added to your account.";
 						await InvokeAsync(StateHasChanged);
 					}

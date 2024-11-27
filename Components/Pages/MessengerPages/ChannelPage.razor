@@ -3,12 +3,14 @@
 @implements IDisposable
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IJSRuntime            jsRuntime
+@inject DiscordService        discordService
 @using System.Drawing
 @using System.Drawing.Imaging
 @using System.Text.RegularExpressions
 @using System.Web
 @using CactusFrontEnd.Events
 @using CactusFrontEnd.Utils
+@using Discord
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -421,7 +423,7 @@
 
 			try
 			{
-				channel        = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), user.Id);
+				channel        = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString));
 				channelMembers = string.Join(", ", channel.UserNames);
 				header         = channel.Name ?? channelMembers;
 				StateHasChanged();
@@ -499,7 +501,13 @@
 
 				Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
 				messageContent = "";
-				await messengerService.PostMessage(msg, user.Id);
+				await messengerService.PostMessage(msg);
+
+				if (channel.Id == CactusConstants.GlobalChannelId)
+				{
+					await discordService.SendCactusMessage(new MessageDTO_Output(msg, user.UserName, user.IsAdmin, channel.Name));
+				}
+
 				messageSendError = "";
 			}
 			else
@@ -517,7 +525,7 @@
 					Optimg      opt             = Optimg.FromImage(image);
 					string      compressedImage = opt.Compress();
 					Message     msg             = new(Guid.NewGuid(), $"(img){compressedImage}", DateTime.UtcNow, user.Id, channel.Id);
-					await messengerService.PostMessage(msg, user.Id);
+					await messengerService.PostMessage(msg);
 					messageSendError = "";
 				}
 				catch
@@ -537,7 +545,7 @@
 	{
 		try
 		{
-			messages = await messengerService.GetAllMessagesInChannel(channel.Id, user.Id);
+			messages = await messengerService.GetAllMessagesInChannel(channel.Id);
 			messages = messages.OrderByDescending(o => o.DateTime).ToArray();
 			Thread imageLoadThread = new(async () =>
 			                             {
@@ -579,7 +587,7 @@
 	private async Task deleteMessageClick(ItemClickEventArgs e)
 	{
 		string messageId = e.ContextMenuTrigger.Id;
-		await messengerService.DeleteMessage(Guid.Parse(messageId), user.Id);
+		await messengerService.DeleteMessage(Guid.Parse(messageId));
 	}
 
 	private async void copyMessageIdClick(ItemClickEventArgs e)
