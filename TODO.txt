@@ -5,3 +5,8 @@
 -announcement channel
 -discord bot
 -EVIL CACTUS
+
+// TODO: add clean up service (run every 24 hours or something (can check every time a user opens the page))
+// - remove expired transactions
+// - maybe implement object deletion chunks?
+// - remove expired temporary accounts (if I decide to implement them)

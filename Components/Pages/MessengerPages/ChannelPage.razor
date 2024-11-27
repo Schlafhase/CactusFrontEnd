@@ -3,12 +3,14 @@
 @implements IDisposable
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IJSRuntime            jsRuntime
+@inject DiscordService        discordService
 @using System.Drawing
 @using System.Drawing.Imaging
 @using System.Text.RegularExpressions
 @using System.Web
 @using CactusFrontEnd.Events
 @using CactusFrontEnd.Utils
+@using Discord
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -500,6 +502,12 @@
 				Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
 				messageContent = "";
 				await messengerService.PostMessage(msg);
+
+				if (channel.Id == CactusConstants.GlobalChannelId)
+				{
+					await discordService.SendCactusMessage(new MessageDTO_Output(msg, user.UserName, user.IsAdmin, channel.Name));
+				}
+
 				messageSendError = "";
 			}
 			else

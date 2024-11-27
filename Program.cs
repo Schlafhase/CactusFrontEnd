@@ -5,6 +5,7 @@ using CactusFrontEnd.Events;
 using CactusFrontEnd.Security;
 using CactusFrontEnd.Utils;
 using CactusPay;
+using Discord;
 using JsonNet.ContractResolvers;
 using Majorsoft.Blazor.Components.Common.JsInterop;
 using Majorsoft.Blazor.Components.CssEvents;
@@ -17,6 +18,7 @@ using Newtonsoft.Json;
 
 string emailPassword;
 string dbPassword;
+string bottoken;
 
 using (StreamReader sr = new("./email.password"))
 {
@@ -27,6 +29,14 @@ using (StreamReader sr = new("./db.password"))
 {
 	dbPassword = sr.ReadLine()!;
 }
+
+using (StreamReader sr = new("./bottoken.password"))
+{
+	bottoken = sr.ReadLine()!;
+}
+
+DiscordService discordService = new DiscordService(bottoken);
+await discordService.Run();
 
 TokenVerification.Initialize();
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -48,10 +58,12 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStat
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthenticationCore();
 builder.Services.AddAuthorizationCore();
+builder.Services.AddSingleton<DiscordService>(_ => discordService);
 builder.Services.AddSingleton<EventService>();
 builder.Services.AddSingleton<IRepository<Account>, CosmosAccountRepository>();
 builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
+builder.Services.AddSingleton<AsyncLocker>(_ => new AsyncLocker());
 builder.Services.AddSingleton<IMessengerService, MessengerService>();
 builder.Services.AddSingleton<IRepository<PaymentManager>, PaymentRepo>();
 builder.Services.AddSingleton<PaymentService>();
