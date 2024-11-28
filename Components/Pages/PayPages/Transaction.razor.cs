@@ -16,7 +16,7 @@ public partial class Transaction : AuthorizedPage
 	private string                     infoText = "Loading...";
 	private bool lockButtons = false;
 
-	protected override async void OnAfterRender(bool firstRender)
+	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{

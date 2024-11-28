@@ -12,7 +12,7 @@
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
 	public string? RedirectUrl { get; set; }
 
-	protected override async void OnAfterRender(bool firstRender)
+	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		try
 		{

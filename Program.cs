@@ -60,6 +60,7 @@ builder.Services.AddAuthenticationCore();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSingleton<DiscordService>(_ => discordService);
 builder.Services.AddSingleton<EventService>();
+builder.Services.AddSingleton<Logger>();
 builder.Services.AddSingleton<IRepository<Account>, CosmosAccountRepository>();
 builder.Services.AddSingleton<IRepository<Channel>, CosmosChannelRepository>();
 builder.Services.AddSingleton<IRepository<Message>, CosmosMessageRepository>();
