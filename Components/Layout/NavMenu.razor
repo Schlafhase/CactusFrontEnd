@@ -1,4 +1,5 @@
-﻿@using CactusFrontEnd.Security
+﻿@using CactusFrontEnd.Events
+@using CactusFrontEnd.Security
 @using Messenger
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
@@ -135,7 +136,7 @@
 				await InvokeAsync(this.StateHasChanged);
 				return;
 			}
-			channels = await messengerService.GetChannelsWithUser(user.Id, user.Id);
+			channels = await messengerService.GetChannelsWithUser(user.Id);
 		}
 		else
 		{
@@ -148,7 +149,7 @@
 	private async Task leaveChannelClick(ItemClickEventArgs e)
 	{
 		string channelId = e.ContextMenuTrigger.Id;
-		await messengerService.RemoveUserFromChannel(Guid.Parse(channelId), user.Id, user.Id);
+		await messengerService.RemoveUserFromChannel(Guid.Parse(channelId), user.Id);
 		if (navigationManager.Uri.EndsWith($"channel/{channelId}"))
 		{
 			navigationManager.NavigateTo("/");

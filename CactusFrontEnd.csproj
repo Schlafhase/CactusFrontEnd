@@ -26,10 +26,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\MessengerInterfaces\MessengerInterfaces.csproj"/>
         <ProjectReference Include="..\Messenger\CactusPay\CactusPay.csproj" />
         <ProjectReference Include="..\Messenger\Discord\Discord.csproj" />
         <ProjectReference Include="..\Messenger\EmailService\EmailService.csproj"/>
+        <ProjectReference Include="..\Messenger\MessengerInterfaces\MessengerInterfaces.csproj" />
         <ProjectReference Include="..\OptimisedImages\OptimisedImages.csproj"/>
     </ItemGroup>
 
