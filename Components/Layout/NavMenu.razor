@@ -130,9 +130,9 @@
 
 	private async void sortChannels(ChannelDTO_Output channel)
 	{
-		foreach (ChannelDTO_Output chan in channels.Where(chan => chan.Id == channel.Id))
+		foreach (ChannelDTO_Output c in channels.Where(c => c.Id == channel.Id))
 		{
-			chan.LastMessage = channel.LastMessage;
+			c.LastMessage = channel.LastMessage;
 			break;
 		}
 
