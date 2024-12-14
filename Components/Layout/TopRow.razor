@@ -34,16 +34,16 @@ else
 </style>
 
 @code {
-	private          string?           token;
-	private          Account?          user = default;
-	private          Action            tokenChangeAction;
+	private string? token;
+	private Account? user = default;
+	private Action tokenChangeAction;
 	[Inject] private IMessengerService messengerService { get; set; }
-	[Inject] private EventService      eventService     { get; set; }
+	[Inject] private EventService eventService { get; set; }
 
 	protected override async void OnInitialized()
 	{
 		await refresh();
-		tokenChangeAction          =  async () => { await refresh(); };
+		tokenChangeAction = async () => { await refresh(); };
 		eventService.OnTokenChange += tokenChangeAction;
 	}
 
@@ -51,7 +51,7 @@ else
 	{
 		try
 		{
-			ProtectedBrowserStorageResult<string> result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			ProtectedBrowserStorageResult<string> result = await ProtectedLocalStore.GetAsync<string>(CactusConstants.AuthTokenKey);
 			token = result.Value;
 
 			if (token is not null)

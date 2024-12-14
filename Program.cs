@@ -35,7 +35,7 @@ using (StreamReader sr = new("./bottoken.password"))
 	bottoken = sr.ReadLine()!;
 }
 
-DiscordService discordService = new DiscordService(bottoken);
+DiscordService discordService = new(bottoken);
 await discordService.Run();
 
 TokenVerification.Initialize();
@@ -44,7 +44,7 @@ builder.WebHost.UseStaticWebAssets();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-       .AddInteractiveServerComponents();
+	   .AddInteractiveServerComponents();
 
 builder.Services.AddCssEvents();
 builder.Services.AddNotifications();
@@ -70,27 +70,27 @@ builder.Services.AddSingleton<IRepository<PaymentManager>, PaymentRepo>();
 builder.Services.AddSingleton<PaymentService>();
 builder.Services.AddSingleton<Payment>();
 builder.Services.AddSingleton<CosmosClient>(_ => new CosmosClient(
-	                                            $"AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey={dbPassword};",
-	                                            new CosmosClientOptions
-	                                            {
-		                                            Serializer = new CosmosNewtonsoftJsonSerializer(
-			                                            new JsonSerializerSettings
-			                                            {
-				                                            ConstructorHandling = ConstructorHandling
-					                                            .AllowNonPublicDefaultConstructor,
-				                                            ContractResolver = new PrivateSetterContractResolver()
-			                                            })
-	                                            }));
+												$"AccountEndpoint=https://cactus-messenger.documents.azure.com:443/;AccountKey={dbPassword};",
+												new CosmosClientOptions
+												{
+													Serializer = new CosmosNewtonsoftJsonSerializer(
+														new JsonSerializerSettings
+														{
+															ConstructorHandling = ConstructorHandling
+																.AllowNonPublicDefaultConstructor,
+															ContractResolver = new PrivateSetterContractResolver()
+														})
+												}));
 builder.Services.AddSingleton<EmailService.EmailService>(_ => new EmailService.EmailService(emailPassword));
 builder.Services.AddBlazorContextMenu(options =>
-                                      {
-	                                      options.ConfigureTemplate("cactusTemplate", template =>
-	                                                                {
-		                                                                template.MenuCssClass = "cactusMenu";
-		                                                                template.MenuItemCssClass =
-			                                                                "cactusMenuItem";
-	                                                                });
-                                      });
+{
+	options.ConfigureTemplate("cactusTemplate", template =>
+	{
+		template.MenuCssClass = "cactusMenu";
+		template.MenuItemCssClass =
+			"cactusMenuItem";
+	});
+});
 
 
 WebApplication app = builder.Build();

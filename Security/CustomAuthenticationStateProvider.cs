@@ -15,22 +15,22 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 	private ClaimsPrincipal GetUser(string userName, string id, string role)
 	{
 		ClaimsIdentity identity = new(new[]
-		                              {
-			                              new Claim(ClaimTypes.Sid,  id),
-			                              new Claim(ClaimTypes.Name, userName),
-			                              new Claim(ClaimTypes.Role, role)
-		                              }, "Authentication type");
+		{
+			new Claim(ClaimTypes.Sid, id),
+			new Claim(ClaimTypes.Name, userName),
+			new Claim(ClaimTypes.Role, role)
+		}, "Authentication type");
 		return new ClaimsPrincipal(identity);
 	}
 
 	private ClaimsPrincipal GetAnonymous()
 	{
 		ClaimsIdentity identity = new(new[]
-		                              {
-			                              new Claim(ClaimTypes.Sid,  "0"),
-			                              new Claim(ClaimTypes.Name, "Anonymous"),
-			                              new Claim(ClaimTypes.Role, "Anonymous")
-		                              }, null);
+		{
+			new Claim(ClaimTypes.Sid, "0"),
+			new Claim(ClaimTypes.Name, "Anonymous"),
+			new Claim(ClaimTypes.Role, "Anonymous")
+		}, null);
 		return new ClaimsPrincipal(identity);
 	}
 

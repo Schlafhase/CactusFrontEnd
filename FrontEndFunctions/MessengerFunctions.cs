@@ -11,12 +11,10 @@ public class MessengerFunctions
 		await messageService.PostMessage(msg.ToMessage(userId, channelId));
 	}
 
-	public static async Task<MessageDTO_Output[]> GetMessages(Guid            channelId,
-	                                                          Guid            userId,
-	                                                          IMessageService messageService)
-	{
-		return await messageService.GetAllMessagesInChannel(channelId);
-	}
+	public static async Task<MessageDTO_Output[]> GetMessages(Guid channelId,
+		Guid userId,
+		IMessageService messageService) =>
+		await messageService.GetAllMessagesInChannel(channelId);
 
 	public static Guid TryParseGuid(string guid)
 	{

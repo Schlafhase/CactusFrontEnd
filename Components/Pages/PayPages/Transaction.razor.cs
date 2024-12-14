@@ -7,20 +7,21 @@ namespace CactusFrontEnd.Components.Pages.PayPages;
 
 public partial class Transaction : AuthorizedPage
 {
-	[SupplyParameterFromQuery(Name = "token")]
-	private string token { get; set; } = "";
-	[Inject]
-	PaymentService paymentService { get; set; }
+	private string infoText = "Loading...";
+	private bool lockButtons = false;
 
 	private SignedToken<PaymentToken> paymentToken;
-	private string                     infoText = "Loading...";
-	private bool lockButtons = false;
+
+	[SupplyParameterFromQuery(Name = "token")]
+	private string token { get; set; } = "";
+
+	[Inject] private PaymentService paymentService { get; set; }
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{
-			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=transaction?token={token}"));
+			await Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=transaction?token={token}"));
 
 			try
 			{
@@ -28,12 +29,13 @@ public partial class Transaction : AuthorizedPage
 			}
 			catch (Exception e)
 			{
-				infoText = $"Invalid token: " + e.Message;
+				infoText = "Invalid token: " + e.Message;
 				await InvokeAsync(StateHasChanged);
 				return;
 			}
 
-			infoText = $"Received payment by {paymentToken.Token.MerchantId} for {paymentToken.Token.Amount} with description {paymentToken.Token.Description}";
+			infoText =
+				$"Received payment by {paymentToken.Token.MerchantId} for {paymentToken.Token.Amount} with description {paymentToken.Token.Description}";
 			await InvokeAsync(StateHasChanged);
 		}
 	}

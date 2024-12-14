@@ -35,16 +35,16 @@
 @code {
 	private string password = "";
 	private string username = "";
-	private bool   showPassword;
-	private string errorString  = "";
+	private bool showPassword;
+	private string errorString = "";
 
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
 	public string? RedirectUrl { get; set; }
 
-	[Inject] private IMessengerService messengerService  { get; set; }
+	[Inject] private IMessengerService messengerService { get; set; }
 	[Inject] private NavigationManager navigationManager { get; set; }
-	[Inject] private EventService      eventService      { get; set; }
+	[Inject] private EventService eventService { get; set; }
 
 	private async Task login()
 	{
@@ -63,13 +63,13 @@
 			return;
 		}
 
-		bool loginSucces = await messengerService.LoginAccount(user.Id, password);
+		bool loginSuccess = await messengerService.LoginAccount(user.Id, password);
 
-		if (loginSucces)
+		if (loginSuccess)
 		{
-			AuthorizationToken token       = new(user.Id, DateTime.UtcNow);
-			string             tokenString = TokenVerification.GetTokenString(token);
-			await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
+			AuthorizationToken token = new(user.Id, DateTime.UtcNow);
+			string tokenString = TokenVerification.GetTokenString(token);
+			await ProtectedLocalStore.SetAsync(CactusConstants.AuthTokenKey, tokenString);
 			eventService.TokenHasChanged();
 			navigationManager.NavigateTo(RedirectUrl ?? "/");
 		}
@@ -83,7 +83,7 @@
 	{
 		try
 		{
-			await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
+			await ProtectedLocalStore.DeleteAsync(CactusConstants.AuthTokenKey);
 		}
 		catch { }
 	}

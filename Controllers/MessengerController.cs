@@ -9,18 +9,18 @@ namespace Messenger.Controllers;
 public class MessengerController : ControllerBase
 {
 	private readonly ILogger<MessengerController> _logger;
-	private readonly IMessengerService            messengerService;
+	private readonly IMessengerService messengerService;
 
 
 	public MessengerController(ILogger<MessengerController> logger, IMessengerService messengerService)
 	{
-		_logger               = logger;
+		_logger = logger;
 		this.messengerService = messengerService;
 	}
 
 	[HttpPost("editAccountAdminStatus")]
 	public async Task<ActionResult> EditAccountAdminStatus([FromQuery] [Required] bool giveAdmin,
-	                                                       [FromBody] [Required]  Guid Id     = default)
+		[FromBody] [Required] Guid Id = default)
 	{
 		try
 		{
@@ -88,8 +88,8 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpPost("{channelId}/addUser")]
-	public async Task<ActionResult> AddUser([FromBody] [Required]  Guid Id,
-	                                        [FromRoute] [Required] Guid channelId)
+	public async Task<ActionResult> AddUser([FromBody] [Required] Guid Id,
+		[FromRoute] [Required] Guid channelId)
 	{
 		try
 		{
@@ -103,9 +103,9 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpPost("{channelId}/postMessage")]
-	public async Task<ActionResult> PostMessage([FromBody] [Required]  MessageDTO_Input msg,
-	                                            [FromRoute] [Required] Guid             channelId,
-	                                            [FromQuery] [Required] Guid             userId)
+	public async Task<ActionResult> PostMessage([FromBody] [Required] MessageDTO_Input msg,
+		[FromRoute] [Required] Guid channelId,
+		[FromQuery] [Required] Guid userId)
 	{
 		try
 		{
@@ -133,7 +133,7 @@ public class MessengerController : ControllerBase
 	}
 
 	[HttpPost("createChannel")]
-	public async Task<ActionResult<Guid>> CreateChannel([FromBody] [Required]  HashSet<Guid> userIds)
+	public async Task<ActionResult<Guid>> CreateChannel([FromBody] [Required] HashSet<Guid> userIds)
 	{
 		try
 		{

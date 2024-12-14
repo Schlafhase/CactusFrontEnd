@@ -1,12 +1,13 @@
 ﻿@page "/logout"
 @using CactusFrontEnd.Events
+@using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @rendermode InteractiveServer
 @inject ProtectedLocalStorage ProtectedLocalStore
 
 @code {
 	[Inject] private NavigationManager navigationManager { get; set; }
-	[Inject] private EventService      eventService      { get; set; }
+	[Inject] private EventService eventService { get; set; }
 
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
@@ -16,7 +17,7 @@
 	{
 		try
 		{
-			await ProtectedLocalStore.DeleteAsync("AuthorizationToken");
+			await ProtectedLocalStore.DeleteAsync(CactusConstants.AuthTokenKey);
 			eventService.TokenHasChanged();
 		}
 		finally

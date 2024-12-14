@@ -6,11 +6,11 @@ namespace CactusFrontEnd.Components.Pages.PayPages;
 
 public partial class Pay : AuthorizedPage
 {
-	[Inject]
-	private Payment payment { get; set; }
+	private float amount;
 	private string payLink = "";
-	private float amount = 0;
-	
+
+	[Inject] private Payment payment { get; set; }
+
 	// ReSharper disable once AsyncVoidMethod
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -23,7 +23,8 @@ public partial class Pay : AuthorizedPage
 
 	private async Task generatePayLink()
 	{
-		payLink = payment.GeneratePaymentLink(user.Id, Guid.NewGuid(), DateTime.Now, TimeSpan.FromMinutes(5), amount, user.Balance, "Payment", []);
+		payLink = payment.GeneratePaymentLink(user.Id, Guid.NewGuid(), DateTime.Now, TimeSpan.FromMinutes(5), amount,
+											  user.Balance, "Payment", []);
 		await InvokeAsync(StateHasChanged);
 	}
 }

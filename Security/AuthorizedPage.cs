@@ -9,17 +9,17 @@ namespace CactusFrontEnd.Security;
 
 public abstract class AuthorizedPage : ComponentBase
 {
-	protected          bool                            alertShown;
-	protected          string                          errorText;
-	protected          SignedToken<AuthorizationToken> signedToken;
-	private            string                          tokenString;
-	protected          Account?                        user;
-	protected          StreakAlert?                    _streakAlert;
-	protected          bool                            updateStreak = true;
-	[Inject] protected NavigationManager               navigationManager   { get; set; }
-	[Inject] protected EventService                    eventService        { get; set; }
-	[Inject] private   ProtectedLocalStorage           protectedLocalStore { get; set; }
-	[Inject] protected IMessengerService               messengerService    { get; set; }
+	protected StreakAlert? _streakAlert;
+	protected bool alertShown;
+	protected string errorText;
+	protected SignedToken<AuthorizationToken> signedToken;
+	private string tokenString;
+	protected bool updateStreak = true;
+	protected Account? user;
+	[Inject] protected NavigationManager navigationManager { get; set; }
+	[Inject] protected EventService eventService { get; set; }
+	[Inject] private ProtectedLocalStorage protectedLocalStore { get; set; }
+	[Inject] protected IMessengerService messengerService { get; set; }
 
 	protected async Task Initialize(Action action)
 	{
@@ -29,7 +29,7 @@ public abstract class AuthorizedPage : ComponentBase
 
 		try
 		{
-			result = await protectedLocalStore.GetAsync<string>("AuthorizationToken");
+			result = await protectedLocalStore.GetAsync<string>(CactusConstants.AuthTokenKey);
 		}
 		catch (TaskCanceledException)
 		{
@@ -48,12 +48,12 @@ public abstract class AuthorizedPage : ComponentBase
 		try
 		{
 			signedToken = TokenVerification.GetTokenFromString<AuthorizationToken>(tokenString);
-			user        = await messengerService.GetAccount(signedToken.Token.UserId);
+			user = await messengerService.GetAccount(signedToken.Token.UserId);
 		}
 		catch (Exception e)
 		{
-			user       = null;
-			errorText  = e.Message;
+			user = null;
+			errorText = e.Message;
 			alertShown = true;
 			action.Invoke();
 			return;
@@ -65,7 +65,7 @@ public abstract class AuthorizedPage : ComponentBase
 
 			try
 			{
-				await protectedLocalStore.DeleteAsync("AuthorizationToken");
+				await protectedLocalStore.DeleteAsync(CactusConstants.AuthTokenKey);
 				eventService.TokenHasChanged();
 			}
 			finally
@@ -80,6 +80,7 @@ public abstract class AuthorizedPage : ComponentBase
 			{
 				return;
 			}
+
 			// TODO: test wether it works now
 			int daysSinceLastStreakIncrease = DateTime.UtcNow.Date.Day - user.LastStreakChange.Date.Day;
 
@@ -104,11 +105,11 @@ public abstract class AuthorizedPage : ComponentBase
 
 	protected virtual void streakIncrease(int newStreak)
 	{
-		_streakAlert?.StreakIncreaseAlert(newStreak);
+		_streakAlert?.ShowStreakIncreaseAlert(newStreak);
 	}
 
 	protected virtual void streakLost(int prevStreak)
 	{
-		_streakAlert?.StreakLostAlert(prevStreak);
+		_streakAlert?.ShowStreakLostAlert(prevStreak);
 	}
 }

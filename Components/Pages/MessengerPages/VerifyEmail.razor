@@ -63,8 +63,8 @@
 					}
 					else
 					{
-						header     = "Failed to add email address";
-						errorText  = "Acces denied.";
+						header = "Failed to add email address";
+						errorText = "Acces denied.";
 						alertShown = true;
 						await InvokeAsync(StateHasChanged);
 					}
@@ -72,9 +72,9 @@
 			}
 			catch (Exception ex)
 			{
-				errorText  = ex.Message;
+				errorText = ex.Message;
 				alertShown = true;
-				header     = "Failed to add email address";
+				header = "Failed to add email address";
 				await InvokeAsync(StateHasChanged);
 			}
 		}

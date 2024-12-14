@@ -1,11 +1,9 @@
-﻿@using CactusFrontEnd.Events
-@using CactusFrontEnd.Security
-@using Messenger
-@using MessengerInterfaces
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 @inject ProtectedLocalStorage ProtectedLocalStore
 @implements IDisposable
+@using CactusFrontEnd.Events
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inherits AuthorizedPage
 
 <div class="top-row ps-3 navbar navbar-dark">
@@ -14,7 +12,7 @@
 	</div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
 	<nav class="flex-column">
@@ -40,6 +38,7 @@
 					</NavLink>
 				</div>
 			}
+
 			<div class="nav-item px-3">
 				<NavLink class="nav-link" href="createChannel">
 					<div class="navLink">
@@ -54,13 +53,15 @@
 					</div>
 				</NavLink>
 			</div>
-			@foreach (var channel in channels)
+
+			@foreach (ChannelDTO_Output? channel in channels)
 			{
 				<ContextMenuTrigger id=@channel.Id.ToString() MenuId="channelContextMenu">
 					<div class="nav-item px-3">
 						<NavLink class="nav-link" href=@($"channel/{channel.Id}")>
 							<div class="navLink">
-								<span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span>@(channel.Name ?? string.Join(", ", channel.UserNames))
+								<span class="bi bi-list-nested-nav-menu"
+								      aria-hidden="true"></span>@(channel.Name ?? string.Join(", ", channel.UserNames))
 							</div>
 						</NavLink>
 					</div>
@@ -71,37 +72,33 @@
 </div>
 
 <ContextMenu Id="channelContextMenu" Template="cactusTemplate">
-	<Item OnClick=@leaveChannelClick>Leave Channel</Item>
-	<Item OnClick=@addUserClick>Add user</Item>
+	<Item OnClick="@leaveChannelClick">Leave Channel</Item>
+	<Item OnClick="@addUserClick">Add user</Item>
 </ContextMenu>
 
 @code {
-	[Inject]
-	NavigationManager navigationManager { get; set; }
-	[Inject]
-	IMessengerService messengerService { get; set; }
-	[Inject]
-	private EventService eventService { get; set; }
+	[Inject] NavigationManager navigationManager { get; set; }
+	[Inject] IMessengerService messengerService { get; set; }
+	[Inject] private EventService eventService { get; set; }
 	ChannelDTO_Output[] channels = [];
 	Action tokenChangeAction;
 	bool loggedIn;
 
-	protected async override void OnAfterRender(bool firstRender)
+	protected override async void OnAfterRender(bool firstRender)
 	{
 		if (firstRender)
 		{
 			loggedIn = true;
-			await this.Initialize(() => loggedIn = false);
-			tokenChangeAction = async () =>
-			{
-				await refresh();
-			};
+			await Initialize(() => loggedIn = false);
+			tokenChangeAction = async () => { await refresh(); };
 			eventService.OnTokenChange += tokenChangeAction;
 			eventService.OnChannelListChange += tokenChangeAction;
-			if (this.signedToken is null)
+
+			if (signedToken is null)
 			{
 				return;
 			}
+
 			await refresh();
 		}
 	}
@@ -109,22 +106,26 @@
 	private async Task refresh()
 	{
 		ProtectedBrowserStorageResult<string> result;
+
 		try
 		{
-			result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			result = await ProtectedLocalStore.GetAsync<string>(CactusConstants.AuthTokenKey);
 		}
 		catch (InvalidOperationException)
 		{
 			loggedIn = false;
 			channels = [];
-			await InvokeAsync(this.StateHasChanged);
+			await InvokeAsync(StateHasChanged);
 			return;
 		}
-		var token = result.Value;
+
+		string? token = result.Value;
+
 		if (token is not null)
 		{
 			loggedIn = true;
 			SignedToken<AuthorizationToken> signedToken = TokenVerification.GetTokenFromString<AuthorizationToken>(token);
+
 			try
 			{
 				user = await messengerService.GetAccount(signedToken.Token.UserId);
@@ -133,9 +134,10 @@
 			{
 				loggedIn = false;
 				channels = [];
-				await InvokeAsync(this.StateHasChanged);
+				await InvokeAsync(StateHasChanged);
 				return;
 			}
+
 			channels = await messengerService.GetChannelsWithUser(user.Id);
 		}
 		else
@@ -143,13 +145,15 @@
 			loggedIn = false;
 			channels = [];
 		}
-		await InvokeAsync(this.StateHasChanged);
+
+		await InvokeAsync(StateHasChanged);
 	}
 
 	private async Task leaveChannelClick(ItemClickEventArgs e)
 	{
 		string channelId = e.ContextMenuTrigger.Id;
 		await messengerService.RemoveUserFromChannel(Guid.Parse(channelId), user.Id);
+
 		if (navigationManager.Uri.EndsWith($"channel/{channelId}"))
 		{
 			navigationManager.NavigateTo("/");
@@ -167,4 +171,5 @@
 		eventService.OnTokenChange -= tokenChangeAction;
 		eventService.OnChannelListChange -= tokenChangeAction;
 	}
+
 }

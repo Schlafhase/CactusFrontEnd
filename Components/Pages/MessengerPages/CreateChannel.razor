@@ -96,12 +96,12 @@
 </style>
 
 @code {
-	[Inject] EventService  eventService { get; set; }
+	[Inject] EventService eventService { get; set; }
 	readonly List<Account> users = [];
-	string                 userName;
-	string                 channelName;
-	string                 errorMessage        = string.Empty;
-	string                 addUserErrorMessage = string.Empty;
+	string userName;
+	string channelName;
+	string errorMessage = string.Empty;
+	string addUserErrorMessage = string.Empty;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -194,7 +194,7 @@
 		}
 		catch (Exception ex)
 		{
-			errorText  = ex.Message;
+			errorText = ex.Message;
 			alertShown = true;
 		}
 	}

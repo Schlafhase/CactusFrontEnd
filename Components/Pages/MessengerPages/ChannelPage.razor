@@ -2,13 +2,12 @@
 @rendermode InteractiveServer
 @implements IDisposable
 @inject ProtectedLocalStorage ProtectedLocalStore
-@inject IJSRuntime            jsRuntime
-@inject DiscordService        discordService
+@inject IJSRuntime jsRuntime
+@inject DiscordService discordService
 @using System.Drawing
 @using System.Drawing.Imaging
 @using System.Text.RegularExpressions
 @using System.Web
-@using CactusFrontEnd.Events
 @using CactusFrontEnd.Utils
 @using Discord
 @using Messenger
@@ -371,26 +370,26 @@
 </script>
 
 @code {
-	[Parameter] public string                 ChannelIdAsString { get; set; }
-	MessageDTO_Output[]                       messages        = [];
-	List<string>                              messageDisplays = [];
-	ChannelDTO_Output                         channel;
-	string                                    header         = "Loading...";
-	string                                    channelMembers = "";
-	string                                    messageContent;
-	int                                       timeZoneOffset = 0;
-	Action<ChannelDTO_Output>                 onMessageAction;
-	private string                            _inputFileId = Guid.NewGuid().ToString();
-	IBrowserFile                              img;
-	bool                                      imgSelected;
-	Timer                                     refreshTimeStampTimer;
-	readonly Regex                            youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
-	readonly Regex                            urlRegex     = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
-	bool                                      sendDisabled;
-	private readonly Dictionary<Guid, string> imageSources     = [];
-	private          string                   messageSendError = "";
+	[Parameter] public string ChannelIdAsString { get; set; }
+	MessageDTO_Output[] messages = [];
+	List<string> messageDisplays = [];
+	ChannelDTO_Output channel;
+	string header = "Loading...";
+	string channelMembers = "";
+	string messageContent;
+	int timeZoneOffset;
+	Action<ChannelDTO_Output> onMessageAction;
+	private string _inputFileId = Guid.NewGuid().ToString();
+	IBrowserFile img;
+	bool imgSelected;
+	Timer refreshTimeStampTimer;
+	readonly Regex youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
+	readonly Regex urlRegex = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
+	bool sendDisabled;
+	private readonly Dictionary<Guid, string> imageSources = [];
+	private string messageSendError = "";
 
-	private bool _disposed = false;
+	private bool _disposed;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -400,21 +399,21 @@
 			eventService.ChannelHasChanged();
 
 			timeZoneOffset *= -1;
-			TimeSpan startTimeSpan  = TimeSpan.Zero;
+			TimeSpan startTimeSpan = TimeSpan.Zero;
 			TimeSpan periodTimeSpan = TimeSpan.FromMinutes(1);
 
 			refreshTimeStampTimer = new Timer(async _ => { await InvokeAsync(StateHasChanged); }, null, startTimeSpan, periodTimeSpan);
 
 			onMessageAction = async channel =>
-			                  {
-				                  if (channel.Users.Contains(user.Id) || channel.Id == Guid.Parse(ChannelIdAsString))
-				                  {
-					                  await refresh();
-				                  }
-			                  };
+			{
+				if (channel.Users.Contains(user.Id) || channel.Id == Guid.Parse(ChannelIdAsString))
+				{
+					await refresh();
+				}
+			};
 			messengerService.OnMessage += onMessageAction;
 
-			await Initialize(action: authFailed);
+			await Initialize(authFailed);
 
 			if (signedToken is null)
 			{
@@ -423,9 +422,9 @@
 
 			try
 			{
-				channel        = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString));
+				channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString));
 				channelMembers = string.Join(", ", channel.UserNames);
-				header         = channel.Name ?? channelMembers;
+				header = channel.Name ?? channelMembers;
 				StateHasChanged();
 			}
 			catch (UnauthorizedAccessException)
@@ -464,7 +463,7 @@
 
 	private Task loadImage(InputFileChangeEventArgs e)
 	{
-		img         = e.File;
+		img = e.File;
 		imgSelected = true;
 		return Task.CompletedTask;
 	}
@@ -521,10 +520,10 @@
 				{
 					using MemoryStream ms = new();
 					await img.OpenReadStream(15728640L).CopyToAsync(ms);
-					using Image image           = Image.FromStream(ms);
-					Optimg      opt             = Optimg.FromImage(image);
-					string      compressedImage = opt.Compress();
-					Message     msg             = new(Guid.NewGuid(), $"(img){compressedImage}", DateTime.UtcNow, user.Id, channel.Id);
+					using Image image = Image.FromStream(ms);
+					Optimg opt = Optimg.FromImage(image);
+					string compressedImage = opt.Compress();
+					Message msg = new(Guid.NewGuid(), $"(img){compressedImage}", DateTime.UtcNow, user.Id, channel.Id);
 					await messengerService.PostMessage(msg);
 					messageSendError = "";
 				}
@@ -533,7 +532,7 @@
 					messageSendError = "Failed to send image. This might be caused by sending an unaccepted file format or sending a too large image. (accepted file formats: png, jpg, jpeg; max file size: 15mb)";
 				}
 
-				imgSelected  = false;
+				imgSelected = false;
 				_inputFileId = Guid.NewGuid().ToString();
 			}
 
@@ -548,18 +547,18 @@
 			messages = await messengerService.GetAllMessagesInChannel(channel.Id);
 			messages = messages.OrderByDescending(o => o.DateTime).ToArray();
 			Thread imageLoadThread = new(async () =>
-			                             {
-				                             Thread.CurrentThread.IsBackground = true;
+			{
+				Thread.CurrentThread.IsBackground = true;
 
-				                             foreach (MessageDTO_Output message in messages)
-				                             {
-					                             if (message.Content.StartsWith("(img)") && !imageSources.ContainsKey(message.Id))
-					                             {
-						                             imageSources[message.Id] = getImage(message.Content);
-						                             await InvokeAsync(StateHasChanged);
-					                             }
-				                             }
-			                             });
+				foreach (MessageDTO_Output message in messages)
+				{
+					if (message.Content.StartsWith("(img)") && !imageSources.ContainsKey(message.Id))
+					{
+						imageSources[message.Id] = getImage(message.Content);
+						await InvokeAsync(StateHasChanged);
+					}
+				}
+			});
 			imageLoadThread.Start();
 			await InvokeAsync(StateHasChanged);
 		}
@@ -632,9 +631,9 @@
 	{
 		try
 		{
-			string data   = content.Substring(5);
+			string data = content.Substring(5);
 			Optimg optimg = Optimg.FromString(data);
-			Bitmap img    = optimg.ToImage();
+			Bitmap img = optimg.ToImage();
 			byte[] bytes;
 
 			using (MemoryStream stream = new())

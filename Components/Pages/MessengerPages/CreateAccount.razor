@@ -1,27 +1,26 @@
 ﻿@page "/createAccount"
 @rendermode InteractiveServer
-@using CactusFrontEnd.Components.Layout
-@using CactusFrontEnd.Utils
-@using Messenger
-@using EmailService;
-@using MessengerInterfaces
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStore
 @using System.Text.RegularExpressions
 @using CactusFrontEnd.Events
-@inject ProtectedLocalStorage ProtectedLocalStore
+@using EmailService
+@using Messenger
+@using MessengerInterfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inherits AuthorizedPage
 
 <PageTitle>Create Account</PageTitle>
 
 <ModalDialog @ref="_dialog"
-			 OverlayBackgroundColor="black"
-			 OverlayOpacity="0.5"
-			 CloseOnOverlayClick="true"
-			 CloseOnEscapeKey="true"
-			 ShowCloseButton="false">
+             OverlayBackgroundColor="black"
+             OverlayOpacity="0.5"
+             CloseOnOverlayClick="true"
+             CloseOnEscapeKey="true"
+             ShowCloseButton="false">
 
 	<Content>
-		<Emails></Emails><br />
+		<Emails></Emails>
+		<br/>
 		<button style="margin-top:20px;" class="btn-cactus primary" @onclick="emailLearnMoreClose">Close</button>
 	</Content>
 </ModalDialog>
@@ -29,20 +28,27 @@
 <h3>Create Account</h3>
 <form @onsubmit="create">
 	<label for="userIdInput">Username: </label>
-	<br />
-	<input class="form-control accountInput" type="text" id="userIdInput" name="userIdInput" @bind-value="username" /><br />
+	<br/>
+	<input class="form-control accountInput" type="text" id="userIdInput" name="userIdInput"
+	       @bind-value="username"/><br/>
 	<label for="passwordInput">Password: </label>
-	<br />
-	<input class="form-control accountInput passwordInput" type="@(showPassword ? "text" : "password")" id="passwordInput" name="passwordInput" @bind-value="password" /><input class="showPassword" type="button" style="background: url(Images/@(showPassword ? "eye-icon.svg" : "eye-blind-icon.svg")) no-repeat; background-size: 20px;" @onclick="@(() => showPassword = !showPassword)"></input>
-	<br />
-	<label for="emailInput">Email (Optional): </label><a style="float: right; color:deepskyblue; text-decoration: underline;cursor:pointer;" @onclick="emailLearnMore">Learn more</a>
-	<br />
-	<input class="form-control accountInput" type="text" id="emailInput" name="emailInput" @bind-value="email" /><br />
+	<br/>
+	<input class="form-control accountInput passwordInput" type="@(showPassword ? "text" : "password")"
+	       id="passwordInput" name="passwordInput" @bind-value="password"/><input class="showPassword" type="button"
+	                                                                              style="background: url(Images/@(showPassword ? "eye-icon.svg" : "eye-blind-icon.svg")) no-repeat; background-size: 20px;"
+	                                                                              @onclick="@(() => showPassword = !showPassword)"></input>
+	<br/>
+	<label for="emailInput">Email (Optional): </label><a
+		style="float: right; color:deepskyblue; text-decoration: underline;cursor:pointer;" @onclick="emailLearnMore">Learn
+		more</a>
+	<br/>
+	<input class="form-control accountInput" type="text" id="emailInput" name="emailInput" @bind-value="email"/><br/>
 	<label for="descriptionInput">Who are you?/Why do you want to create an Account?:</label>
-	<br />
-	<textarea class="form-control accountInput" id="descriptionInput" name="descriptionInput" @bind="description" /><br />
-	By creating an Account you agree to the <a href="tos">Terms of Service</a><br /><br />
-	<input class="btn-cactus primary" type="submit" disabled="@requested" value="@(!requested ? "Request Account" : "Processing...")" />
+	<br/>
+	<textarea class="form-control accountInput" id="descriptionInput" name="descriptionInput" @bind="description"/><br/>
+	By creating an Account you agree to the <a href="tos">Terms of Service</a><br/><br/>
+	<input class="btn-cactus primary" type="submit" disabled="@requested"
+	       value="@(!requested ? "Request Account" : "Processing...")"/>
 	<span class="errorSpan">@errorString</span>
 </form>
 
@@ -63,20 +69,18 @@
 	private string email = "";
 	private string description = "";
 	private string errorString = "";
-	private bool requested = false;
-	private bool showPassword = false;
-	private Regex emailRegex = new(@"(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])");
+	private bool requested;
+	private bool showPassword;
+	private readonly Regex emailRegex = new(@"(?:[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|""(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*"")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])");
+
 	[Parameter]
 	[SupplyParameterFromQuery(Name = "redirectUrl")]
 	public string? RedirectUrl { get; set; }
-	[Inject]
-	private IMessengerService messengerService { get; set; }
-	[Inject]
-	private NavigationManager navigationManager { get; set; }
-	[Inject]
-	private EventService eventService { get; set; }
-	[Inject]
-	private EmailService emailService { get; set; }
+
+	[Inject] private IMessengerService messengerService { get; set; }
+	[Inject] private NavigationManager navigationManager { get; set; }
+	[Inject] private EventService eventService { get; set; }
+	[Inject] private EmailService emailService { get; set; }
 
 	private async Task emailLearnMore()
 	{
@@ -92,6 +96,7 @@
 	{
 		Account user;
 		errorString = "";
+
 		try
 		{
 			user = await messengerService.GetAccountByUsername(username);
@@ -103,29 +108,34 @@
 				errorString = "Username must be at least 3 characters long";
 				return;
 			}
+
 			if (username.Length > 40)
 			{
 				errorString = "Username can only be 40 characters long.";
 				return;
 			}
+
 			if (password.Length < 4)
 			{
 				errorString = "Please provide a password with at least 4 characters.";
 				return;
 			}
+
 			if (!string.IsNullOrWhiteSpace(email))
 			{
-
 				MatchCollection emailMatches = emailRegex.Matches(email.ToLower());
+
 				if (emailMatches.Count == 0 || emailMatches[0].Value != email.ToLower())
 				{
 					errorString = "Invalid email address.";
 					return;
 				}
 			}
+
 			requested = true;
-			await InvokeAsync(this.StateHasChanged);
+			await InvokeAsync(StateHasChanged);
 			Guid id = Guid.NewGuid();
+
 			try
 			{
 				id = await messengerService.CreateAccount(username, password);
@@ -138,20 +148,24 @@
 					await messengerService.DeleteAccount(id);
 				}
 				catch (KeyNotFoundException) { }
+
 				requested = false;
 				errorString = ex.Message + " - Try again.";
-				await InvokeAsync(this.StateHasChanged);
+				await InvokeAsync(StateHasChanged);
 				return;
 			}
+
 			// user = await messengerService.GetAccountByUsername(username);
 			// AuthorizationToken token = new(user.Id, DateTime.UtcNow);
 			// string tokenString = TokenVerification.GetTokenString(token);
-			// await ProtectedLocalStore.SetAsync("AuthorizationToken", tokenString);
+			// await ProtectedLocalStore.SetAsync(CactusConstants.AuthTokenKey, tokenString);
 			// eventService.TokenHasChanged();
 			// navigationManager.NavigateTo(RedirectUrl ?? "/");
 			navigationManager.NavigateTo("accountLocked");
 			return;
 		}
+
 		errorString = "Username is taken";
 	}
+
 }

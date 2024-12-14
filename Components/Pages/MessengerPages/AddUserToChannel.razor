@@ -29,14 +29,14 @@
 <input type="button" value="Add users" @onclick="@addUsersClick"/>
 
 @code {
-	[Parameter] public string       ChannelIdAsString { get; set; }
-	[Inject]           EventService eventService      { get; set; }
-	ChannelDTO_Output               channel;
-	readonly List<Account>          users  = [];
-	string                          header = "Loading...";
-	string                          userName;
-	string                          errorMessage        = string.Empty;
-	string                          addUserErrorMessage = string.Empty;
+	[Parameter] public string ChannelIdAsString { get; set; }
+	[Inject] EventService eventService { get; set; }
+	ChannelDTO_Output channel;
+	readonly List<Account> users = [];
+	string header = "Loading...";
+	string userName;
+	string errorMessage = string.Empty;
+	string addUserErrorMessage = string.Empty;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -44,7 +44,7 @@
 		{
 			await Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}/addUser"));
 			channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString));
-			header  = $"Add user to {channel.Name}";
+			header = $"Add user to {channel.Name}";
 			await InvokeAsync(StateHasChanged);
 		}
 	}
@@ -101,4 +101,5 @@
 
 		navigationManager.NavigateTo($"channel/{channel.Id}");
 	}
+
 }

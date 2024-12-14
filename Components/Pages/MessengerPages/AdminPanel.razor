@@ -181,12 +181,12 @@
 </style>
 
 @code {
-	private          List<Account> accounts        = [];
-	private readonly List<Guid>    deletedAccounts = [];
-	private          Guid          selectedAccount = Guid.Empty;
-	private          ModalDialog   _dialog;
-	private          ModalDialog   _detailDialog;
-	private          string        error = "";
+	private List<Account> accounts = [];
+	private readonly List<Guid> deletedAccounts = [];
+	private Guid selectedAccount = Guid.Empty;
+	private ModalDialog _dialog;
+	private ModalDialog _detailDialog;
+	private string error = "";
 
 	private async Task openDeleteDialog()
 	{
@@ -198,21 +198,18 @@
 	{
 		await _dialog.Close();
 	}
-	
+
 	private async Task openDetailDialog()
 	{
 		await _detailDialog.Open();
 	}
-	
+
 	private async Task closeDetailDialog()
 	{
 		await _detailDialog.Close();
 	}
 
-	private static string listDetails(Account account)
-	{
-		return JsonConvert.SerializeObject(account, Formatting.Indented).Replace("\n", "<br/>");
-	}
+	private static string listDetails(Account account) => JsonConvert.SerializeObject(account, Formatting.Indented).Replace("\n", "<br/>");
 
 	private async Task delete()
 	{
