@@ -54,13 +54,13 @@
 				</NavLink>
 			</div>
 
-			@foreach (ChannelDTO_Output? channel in channels)
+			@foreach (ChannelDTO_Output channel in channels)
 			{
 				<ContextMenuTrigger id=@channel.Id.ToString() MenuId="channelContextMenu">
 					<div class="nav-item px-3">
 						<NavLink class="nav-link" href=@($"channel/{channel.Id}")>
 							<div class="navLink">
-								<span class="bi bi-list-nested-nav-menu"
+								<span class="bi bi-channel@(channelUnread(channel) ? "-unread" : "")-nav-menu"
 								      aria-hidden="true"></span>@(channel.Name ?? string.Join(", ", channel.UserNames))
 							</div>
 						</NavLink>
@@ -76,23 +76,42 @@
 	<Item OnClick="@addUserClick">Add user</Item>
 </ContextMenu>
 
+<style>
+	.bi-channel-nav-menu {
+		background-image: url("Images/channel.svg");
+		width: 1.75rem !important;
+		height: 1.75rem !important;
+	}
+
+	.bi-channel-unread-nav-menu {
+		background-image: url("Images/channel_unread.svg");
+		width: 1.75rem !important;
+		height: 1.75rem !important;
+	}
+</style>
+
 @code {
-	[Inject] NavigationManager navigationManager { get; set; }
-	[Inject] IMessengerService messengerService { get; set; }
-	[Inject] private EventService eventService { get; set; }
-	ChannelDTO_Output[] channels = [];
-	Action tokenChangeAction;
-	bool loggedIn;
+	[Inject] private EventService            eventService { get; set; }
+	private          List<ChannelDTO_Output> channels = [];
+	private          bool                    loggedIn;
+	private          bool                    _initialized = false;
+
+	public NavMenu()
+	{
+		updateStreak = false;
+	}
 
 	protected override async void OnAfterRender(bool firstRender)
 	{
 		if (firstRender)
 		{
-			loggedIn = true;
+			_initialized = true;
+			loggedIn     = true;
 			await Initialize(() => loggedIn = false);
-			tokenChangeAction = async () => { await refresh(); };
-			eventService.OnTokenChange += tokenChangeAction;
+			eventService.OnTokenChange       += tokenChangeAction;
 			eventService.OnChannelListChange += tokenChangeAction;
+			eventService.OnChannelChange     += tokenChangeAction;
+			messengerService.OnMessage       += sortChannels;
 
 			if (signedToken is null)
 			{
@@ -103,13 +122,42 @@
 		}
 	}
 
+	private bool channelUnread(ChannelDTO_Output channel)
+	{
+		channel.LastRead.TryGetValue(user.Id, out DateTime lastRead);
+		return channel.LastMessage > lastRead;
+	}
+
+	private async void sortChannels(ChannelDTO_Output channel)
+	{
+		foreach (ChannelDTO_Output c in channels.Where(c => c.Id == channel.Id))
+		{
+			c.LastMessage = channel.LastMessage;
+			break;
+		}
+
+		channels = channels.OrderByDescending(c => c.LastMessage).ToList();
+		refresh();
+	}
+
+	private async void tokenChangeAction()
+	{
+		await refresh();
+	}
+
 	private async Task refresh()
 	{
-		ProtectedBrowserStorageResult<string> result;
+		if (!_initialized)
+		{
+			return;
+		}
+
+		string? token;
 
 		try
 		{
-			result = await ProtectedLocalStore.GetAsync<string>(CactusConstants.AuthTokenKey);
+			ProtectedBrowserStorageResult<string> result = await ProtectedLocalStore.GetAsync<string>("AuthorizationToken");
+			token = result.Value;
 		}
 		catch (InvalidOperationException)
 		{
@@ -118,8 +166,10 @@
 			await InvokeAsync(StateHasChanged);
 			return;
 		}
-
-		string? token = result.Value;
+		catch (JSDisconnectedException)
+		{
+			token = null;
+		}
 
 		if (token is not null)
 		{
@@ -138,7 +188,8 @@
 				return;
 			}
 
-			channels = await messengerService.GetChannelsWithUser(user.Id);
+			channels = (await messengerService.GetChannelsWithUser(user.Id)).ToList();
+			channels = channels.OrderByDescending(c => c.LastMessage).ToList();
 		}
 		else
 		{
@@ -160,10 +211,11 @@
 		}
 	}
 
-	private async Task addUserClick(ItemClickEventArgs e)
+	private Task addUserClick(ItemClickEventArgs e)
 	{
 		string channelId = e.ContextMenuTrigger.Id;
 		navigationManager.NavigateTo($"channel/{channelId}/addUser");
+		return Task.CompletedTask;
 	}
 
 	public void Dispose()
