@@ -12,6 +12,8 @@
 @using MessengerInterfaces
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using OptimisedImages
+@using System.Drawing
+@using System.Drawing.Imaging
 @inherits AuthorizedPage
 
 <PageTitle>@((channel is not null ? channel.Name : "Channel") + " - Cactus Messenger")</PageTitle>
