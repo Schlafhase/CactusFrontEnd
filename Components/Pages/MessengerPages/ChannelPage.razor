@@ -4,8 +4,6 @@
 @inject ProtectedLocalStorage ProtectedLocalStore
 @inject IJSRuntime jsRuntime
 @inject DiscordService discordService
-@using System.Drawing
-@using System.Drawing.Imaging
 @using System.Text.RegularExpressions
 @using System.Web
 @using CactusFrontEnd.Utils
@@ -395,7 +393,7 @@
 	{
 		if (firstRender && !_disposed)
 		{
-			timeZoneOffset =  await jsRuntime.InvokeAsync<int>("timeZoneOffset");
+			timeZoneOffset = await jsRuntime.InvokeAsync<int>("timeZoneOffset");
 			eventService.ChannelHasChanged();
 
 			timeZoneOffset *= -1;
