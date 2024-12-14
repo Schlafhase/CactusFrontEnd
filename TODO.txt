@@ -1,7 +1,14 @@
--seiten schöner machen
--admin control panel
 -channel details page
 -context menu für ios (?)
--optional email verfication for password resets
--account creation => account creation requests to prevent spam
+-password resets
 -cactus credits
+-announcement channel
+-discord bot
+-EVIL CACTUS
+
+// TODO: add clean up service (run every 24 hours or something (can check every time a user opens the page))
+// - remove expired transactions
+// - maybe implement object deletion chunks?
+// - remove expired temporary accounts (if I decide to implement them)
+
+// Math mode (clock)
