@@ -396,7 +396,7 @@
 	{
 		if (firstRender && !_disposed)
 		{
-			// timeZoneOffset =  await jsRuntime.InvokeAsync<int>("timeZoneOffset");
+			timeZoneOffset =  await jsRuntime.InvokeAsync<int>("timeZoneOffset");
 			eventService.ChannelHasChanged();
 
 			timeZoneOffset *= -1;
