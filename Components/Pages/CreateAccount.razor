@@ -19,10 +19,10 @@
 			 CloseOnEscapeKey="true"
 			 ShowCloseButton="false">
 
-			 <Content>
-				 <Emails></Emails><br />
-				 <button style="margin-top:20px;" class="btn-cactus primary" @onclick="emailLearnMoreClose">Close</button>
-			 </Content>
+	<Content>
+		<Emails></Emails><br />
+		<button style="margin-top:20px;" class="btn-cactus primary" @onclick="emailLearnMoreClose">Close</button>
+	</Content>
 </ModalDialog>
 
 <h3>Create Account</h3>
@@ -112,11 +112,15 @@
 				errorString = "Please provide a password with at least 4 characters.";
 				return;
 			}
-			MatchCollection emailMatches = emailRegex.Matches(email.ToLower());
-			if (emailMatches.Count == 0 || emailMatches[0].Value != email.ToLower())
+			if (!string.IsNullOrWhiteSpace(email))
 			{
-				errorString = "Invalid email address.";
-				return;
+
+				MatchCollection emailMatches = emailRegex.Matches(email.ToLower());
+				if (emailMatches.Count == 0 || emailMatches[0].Value != email.ToLower())
+				{
+					errorString = "Invalid email address.";
+					return;
+				}
 			}
 			requested = true;
 			await InvokeAsync(this.StateHasChanged);

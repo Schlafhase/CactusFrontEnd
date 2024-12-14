@@ -173,7 +173,7 @@ else
 		if (!string.IsNullOrWhiteSpace(email))
 		{
 			MatchCollection emailMatches = emailRegex.Matches(email.ToLower());
-			if (emailMatches.Count == 0 || emailMatches[0].Value != email.ToLower())
+			if (emailMatches.Count != 0 && emailMatches[0].Value == email.ToLower())
 			{
 				emailService.Send(email, "Verify your email address", EmailService.GenerateVerificationEmail(user.Id, email));
 				emailAlertVisible = true;

@@ -54,6 +54,10 @@
     background-image: url("https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Icon_circle_Plus_white.svg/1024px-Icon_circle_Plus_white.svg.png");
 }
 
+.bi-admin-nav-menu {
+    background-image: url("Images/admin_icon.svg");
+}
+
 .nav-item {
     font-size: 0.9rem;
     padding-bottom: 0.3rem;

@@ -33,21 +33,28 @@
 			{
 				<li class=@(message.AuthorId == user.Id ? "selfSentMessage message" : "message")>
 
-					<ContextMenuTrigger id=@message.Id.ToString() MenuId=@(message.AuthorId == user.Id || user.IsAdmin ? "messageContextMenuWithDelete" : "messageContextMenu")>
+					<ContextMenuTrigger id=@message.Id.ToString()
+					                    MenuId=@(message.AuthorId == user.Id || user.IsAdmin ? "messageContextMenuWithDelete" : "messageContextMenu")>
 						@if ((messages[i].AuthorId != (i + 1 > messages.Length - 1 ? Guid.Empty : messages[i + 1].AuthorId)) || messages[i].DateTime - (i + 1 > messages.Length - 1 ? DateTime.MinValue : messages[i + 1].DateTime) > TimeSpan.FromMinutes(2))
 						{
 							<span class="authorName">@message.AuthorName</span>
+
 							@if (message.AuthorIsAdmin)
 							{
 								<span class="adminBadge" title="Admin/Developer"></span>
 							}
-							<span class="timestamp" title=@(message.DateTime.AddHours(timeZoneOffset).ToString())>@Utils.Relativize(message.DateTime.AddHours(timeZoneOffset), DateTime.UtcNow.AddHours(timeZoneOffset))</span>
-							<br />
+
+							<span class="timestamp"
+							      title=@(message.DateTime.AddHours(timeZoneOffset).ToString())>@Utils.Relativize(message.DateTime.AddHours(timeZoneOffset), DateTime.UtcNow.AddHours(timeZoneOffset))</span>
+							<br/>
 						}
 						@if (message.Content.StartsWith("(img)"))
 						{
-							<div style="background-image: url(Images/image_load.png); width: min(100%, 350px); height: 350px;border-radius:10px; margin-bottom: 10px; padding:0">
-								<img style="width: 100%; height: 100%; padding:0; border-radius:10px" id="@($"img-{message.Id}")" src="@(imageSources.ContainsKey(message.Id) ? imageSources[message.Id] : "")" />
+							<div
+								style="background-image: url(Images/image_load.png); width: min(100%, 350px); height: 350px;border-radius:10px; margin-bottom: 10px; padding:0">
+								<img style="width: 100%; height: 100%; padding:0; border-radius:10px"
+								     id="@($"img-{message.Id}")"
+								     src="@(imageSources.ContainsKey(message.Id) ? imageSources[message.Id] : "")"/>
 							</div>
 						}
 						else
@@ -59,7 +66,7 @@
 						@if (getEmbedUrl(message.Content) is not null)
 						{
 							<iframe style="border-radius: 20px;"
-									src=@getEmbedUrl(message.Content) allowfullscreen>
+							        src=@getEmbedUrl(message.Content) allowfullscreen>
 							</iframe>
 						}
 					</ContextMenuTrigger>
@@ -68,7 +75,12 @@
 		</ul>
 		<div id="messageInput">
 			<form @onsubmit=@send>
-				<InputFile id="fileInput" @key=@(_inputFileId) accept=".png,.jpg.jpeg,.JPG" OnChange="loadImage" @oncancel="aborted" style="transform: translate(0.5rem, 0);"></InputFile><span style="float: right; color: red; font-style: italic;">@messageSendError</span><input id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent"><input disabled="@sendDisabled" type="submit" id="sendButton" value=@(sendDisabled ? "Sending..." : "Send") />
+				<InputFile id="fileInput" @key=@(_inputFileId) accept=".png,.jpg.jpeg,.JPG" OnChange="loadImage"
+				           @oncancel="aborted" style="transform: translate(0.5rem, 0);"></InputFile>
+				<span style="float: right; color: red; font-style: italic;">@messageSendError</span><input
+					id="messageInputTextBox" autocomplete="off" type="text" @bind-value="messageContent"><input
+					disabled="@sendDisabled" type="submit" id="sendButton"
+					value=@(sendDisabled ? "Sending..." : "Send")/>
 			</form>
 		</div>
 	</div>
@@ -100,7 +112,7 @@
 		color: #fff;
 		cursor: pointer;
 		display: inline-block;
-		font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+		font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
 		font-size: 14px;
 		font-weight: 600;
 		line-height: 20px;
@@ -119,7 +131,7 @@
 	function onPaste(e) {
 		inputFile = document.getElementById("fileInput");
 		inputFile.files = e.clipboardData.files;
-		const event = new Event('change', { bubbles: true });
+		const event = new Event('change', {bubbles: true});
 		inputFile.dispatchEvent(event);
 	}
 
@@ -127,7 +139,7 @@
 		e.preventDefault();
 		inputFile = document.getElementById("fileInput");
 		inputFile.files = e.dataTransfer.files;
-		const event = new Event('change', { bubbles: true });
+		const event = new Event('change', {bubbles: true});
 		inputFile.dispatchEvent(event);
 	}
 
@@ -165,31 +177,28 @@
 </script>
 
 @code {
-	[Parameter]
-	public string ChannelIdAsString { get; set; }
-	[Inject]
-	IMessengerService messengerService { get; set; }
-	[Inject]
-	NavigationManager navigationManager { get; set; }
-	MessageDTO_Output[] messages = [];
-	List<string> messageDisplays = [];
+	[Parameter] public string ChannelIdAsString { get; set; }
 	ChannelDTO_Output channel;
+	
+	MessageDTO_Output[] messages = [];
+	string messageContent;
+	
 	string header = "Loading...";
 	string channelMembers = "";
-	string messageContent;
+	
 	int timeZoneOffset;
 	Action<ChannelDTO_Output> onMessageAction;
 	private string _inputFileId = Guid.NewGuid().ToString();
 	IBrowserFile img;
 	bool imgSelected = false;
 	Timer refreshTimeStampTimer;
-	Regex youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
-	Regex urlRegex = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
-	bool sendDisabled = false;
-	private Dictionary<Guid, string> imageSources = [];
+	readonly Regex youtubeRegex = new(@"https?://(www\.)?youtu(.be|be.com)/((watch(\?v=|/))|shorts/)?([A-Za-z0-9_]+)");
+	readonly Regex urlRegex = new(@"(https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
+	bool sendDisabled;
+	private readonly Dictionary<Guid, string> imageSources = [];
 	private string messageSendError = "";
 
-	protected async override void OnAfterRender(bool firstRender)
+	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender)
 		{
@@ -198,10 +207,7 @@
 			var startTimeSpan = TimeSpan.Zero;
 			var periodTimeSpan = TimeSpan.FromMinutes(1);
 
-			refreshTimeStampTimer = new Timer(async (a) =>
-			{
-				await InvokeAsync(this.StateHasChanged);
-			}, null, startTimeSpan, periodTimeSpan);
+			refreshTimeStampTimer = new Timer(async (a) => { await InvokeAsync(this.StateHasChanged); }, null, startTimeSpan, periodTimeSpan);
 
 			onMessageAction = async channel =>
 			{
@@ -213,10 +219,12 @@
 			messengerService.OnMessage += onMessageAction;
 
 			await this.Initialize(() => navigationManager.NavigateTo($"logout?redirectUrl=channel/{ChannelIdAsString}"));
+
 			if (this.signedToken is null)
 			{
 				return;
 			}
+
 			try
 			{
 				channel = await messengerService.GetChannel(Guid.Parse(ChannelIdAsString), user.Id);
@@ -239,8 +247,10 @@
 				{
 					throw;
 				}
+
 				return;
 			}
+
 			await refresh();
 		}
 	}
@@ -259,15 +269,16 @@
 	public static byte[] ReadFully(Stream input)
 	{
 		byte[] buffer = new byte[16 * 1024];
-		using (MemoryStream ms = new MemoryStream())
+
+		using MemoryStream ms = new MemoryStream();
+		int read;
+
+		while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
 		{
-			int read;
-			while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
-			{
-				ms.Write(buffer, 0, read);
-			}
-			return ms.ToArray();
+			ms.Write(buffer, 0, read);
 		}
+
+		return ms.ToArray();
 	}
 
 	private async Task send()
@@ -275,12 +286,14 @@
 		if (!sendDisabled)
 		{
 			sendDisabled = true;
+
 			if (!string.IsNullOrWhiteSpace(messageContent) && messageContent.Length <= 5000)
 			{
 				if (messageContent.StartsWith("(img)"))
 				{
 					messageContent = @"\" + messageContent;
 				}
+
 				Message msg = new(Guid.NewGuid(), messageContent, DateTime.UtcNow, user.Id, channel.Id);
 				messageContent = "";
 				await messengerService.PostMessage(msg, user.Id);
@@ -290,6 +303,7 @@
 			{
 				messageSendError = "Message was empty or too long (max message length: 500 characters)";
 			}
+
 			if (imgSelected)
 			{
 				try
@@ -298,18 +312,20 @@
 					await img.OpenReadStream(15728640L).CopyToAsync(ms);
 					using Image image = Image.FromStream(ms);
 					Optimg opt = Optimg.FromImage(image);
-					string compr = opt.Compress();
-					Message msg = new(Guid.NewGuid(), $"(img){compr}", DateTime.UtcNow, user.Id, channel.Id);
-					await messengerService.PostMessage(msg, user.Id);
+					string compressed = opt.Compress();
+					Message msg = new(Guid.NewGuid(), $"(img){compressed}", DateTime.UtcNow, user.Id, channel.Id);
 					messageSendError = "";
+					await messengerService.PostMessage(msg, user.Id);
 				}
 				catch
 				{
 					messageSendError = "Failed to send image. This might be caused by sending an unaccepted file format or sending a too large image. (accepted file formats: png, jpg, jpeg; max file size: 15mb)";
 				}
+
 				imgSelected = false;
 				_inputFileId = Guid.NewGuid().ToString();
 			}
+
 			sendDisabled = false;
 		}
 	}
@@ -323,13 +339,13 @@
 			Thread imageLoadThread = new(async () =>
 			{
 				Thread.CurrentThread.IsBackground = true;
+
 				foreach (var message in messages)
 				{
-					if (message.Content.StartsWith("(img)") && !imageSources.ContainsKey(message.Id))
-					{
-						imageSources[message.Id] = getImage(message.Content);
-						await InvokeAsync(this.StateHasChanged);
-					}
+					if (!message.Content.StartsWith("(img)") || imageSources.ContainsKey(message.Id)) continue;
+					
+					imageSources[message.Id] = getImage(message.Content);
+					await InvokeAsync(this.StateHasChanged);
 				}
 			});
 			imageLoadThread.Start();
@@ -351,7 +367,7 @@
 		await messengerService.DeleteMessage(Guid.Parse(messageId), user.Id);
 	}
 
-	private async void copyMessageIdClick(ItemClickEventArgs e)
+	private async Task copyMessageIdClick(ItemClickEventArgs e)
 	{
 		await jsRuntime.InvokeVoidAsync($"navigator.clipboard.writeText", e.ContextMenuTrigger.Id);
 	}
@@ -359,19 +375,14 @@
 	private string? getEmbedUrl(string message)
 	{
 		var youtubeMatch = youtubeRegex.Matches(message);
-		if (youtubeMatch.Count == 0)
-		{
-			return null;
-		}
-		else
-		{
-			return $"https://youtube.com/embed/{youtubeMatch[0].Groups[6].Value}?wmode=transparent";
-		}
+
+		return youtubeMatch.Count == 0 ? null : $"https://youtube.com/embed/{youtubeMatch[0].Groups[6].Value}?wmode=transparent";
 	}
 
 	private string makeLinksClickable(string message)
 	{
 		string newMessage = "";
+
 		foreach (char character in HttpUtility.HtmlEncode(message))
 		{
 			if (character == '\n')
@@ -383,30 +394,34 @@
 				newMessage += character;
 			}
 		}
+
 		newMessage = urlRegex.Replace(newMessage, $"<a href=\"$1\">$1</a>");
 		newMessage = newMessage.Replace(@"\(img)", "(img)");
 		return newMessage;
 	}
 
-	private string getImage(string content)
+	private static string getImage(string content)
 	{
-	try
-	{
-		string data = content.Substring(5);
-		Optimg optimg = Optimg.FromString(data);
-		Bitmap img = optimg.ToImage();
-		byte[] bytes;
-		using (var stream = new MemoryStream())
+		try
 		{
-			img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
-			bytes = stream.ToArray();
+			string data = content[5..];
+			Optimg optimg = Optimg.FromString(data);
+			Bitmap img = optimg.ToImage();
+			byte[] bytes;
+
+			using (var stream = new MemoryStream())
+			{
+				img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+				bytes = stream.ToArray();
+			}
+
+			var b64String = Convert.ToBase64String(bytes);
+			return "data:image/png;base64," + b64String;
 		}
-		var b64String = Convert.ToBase64String(bytes);
-		return "data:image/png;base64," + b64String;
+		catch
+		{
+			return "";
+		}
 	}
-	catch
-	{
-		return "";
-	}
-	}
+
 }

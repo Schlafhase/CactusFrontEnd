@@ -29,6 +29,16 @@
 		}
 		else
 		{
+			@if (user.IsAdmin)
+			{
+				<div class="nav-item px-3">
+					<NavLink class="nav-link" href="adminPanel">
+						<div class="navLink">
+							<span class="bi bi-admin-nav-menu" aria-hidden="true"></span> Control Panel
+						</div>
+					</NavLink>
+				</div>
+			}
 			<div class="nav-item px-3">
 				<NavLink class="nav-link" href="createChannel">
 					<div class="navLink">

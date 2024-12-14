@@ -22,38 +22,51 @@
 		<p style="color: red;">
 			This can't be undone.
 		</p>
-		<button style="float: left;" class="btn-cactus" @onclick="closeDeleteDialog">Nevermind</button>
-		<button style="float: right;" class="btn-cactus danger">Delete @(accounts.Where(acc => acc.Id == selectedAccount).ToArray()[0].UserName)</button>
+		<div>
+			<button style="float: left;" class="btn-cactus" @onclick="closeDeleteDialog">Nevermind</button>
+			<button style="float: right;" class="btn-cactus danger" @onclick="delete">Delete @(accounts.Where(acc => acc.Id == selectedAccount).ToArray()[0].UserName)</button>
+		</div>
+		<div style="margin-top:70px;"><code>@error</code></div>
 	</Content>
 </ModalDialog>
+
+<style>
+	.bmodal-content {
+		width: auto !important;
+	}
+</style>
 
 <h1>Control Panel</h1>
 <div class="card-cactus" id="accounts">
 	<h2>Accounts</h2>
 	@foreach (Account account in accounts)
 	{
-		<div style="max-height: @((selectedAccount == account.Id ? "200px" : "72px"));" class="accountCard">
-			<div @onclick="@(() => selectedAccount = account.Id)" class="accountMeta @account.Id">
-				<strong class="accountName @(account.IsAdmin ? "admin" : "") @(account.Locked ? "locked" : "")">@account.UserName</strong><br />
-				<span class="accountId">@account.Id</span>
-			</div>
-			<div class="accountMoreInfo">
-				<p>
-					@if (!string.IsNullOrWhiteSpace(account.Email))
-					{
-						<strong>Email address: </strong>
-						<span>@account.Email</span>
+		@if (!deletedAccounts.Contains(account.Id))
+		{
+			<div style="max-height: @((selectedAccount == account.Id ? "200px" : "72px"));" class="accountCard">
+				<div @onclick="@(() => selectedAccount = account.Id)" class="accountMeta @account.Id">
+					<strong class="accountName @(account.IsAdmin ? "admin" : "") @(account.Locked ? "locked" : "")">@account.UserName</strong><br />
+					<span class="accountId">@account.Id</span>
+				</div>
+				<div class="accountMoreInfo">
+					<p>
+						@if (!string.IsNullOrWhiteSpace(account.Email))
+						{
+							<strong>Email address: </strong>
+							<span>@account.Email</span>
 
-						<br />
-					}
-					<strong>Created at: </strong>
-					<span>@account.CreationDate</span>
-				</p>
-				<div class="accountSettings">
-					<button class="btn-cactus danger" @onclick="openDeleteDialog" disabled="@(account.Id == CactusConstants.AdminId || account.Id == CactusConstants.DeletedId)">Delete</button>
+							<br />
+						}
+						<strong>Created at: </strong>
+						<span>@account.CreationDate</span>
+					</p>
+					<div class="accountSettings">
+						<button class="btn-cactus danger" @onclick="openDeleteDialog" disabled="@(account.Id == CactusConstants.AdminId || account.Id == CactusConstants.DeletedId)">Delete</button>
+
+					</div>
 				</div>
 			</div>
-		</div>
+		}
 	}
 </div>
 
@@ -134,11 +147,40 @@
 
 @code {
 	private List<Account> accounts = [];
+	private List<Guid> deletedAccounts = [];
 	private Guid selectedAccount = Guid.Empty;
 	private ModalDialog _dialog;
+	private string error = "";
 
-	private async Task openDeleteDialog() => await _dialog.Open();
+	private async Task openDeleteDialog()
+	{
+		error = "";
+		await _dialog.Open();
+	}
 	private async Task closeDeleteDialog() => await _dialog.Close();
+
+	private async Task delete()
+	{
+		try
+		{
+			await messengerService.DeleteAccount(selectedAccount);
+			deletedAccounts.Add(selectedAccount);
+			await InvokeAsync(this.StateHasChanged);
+			try
+			{
+				selectedAccount = accounts[accounts.IndexOf(accounts.Find(acc => acc.Id == selectedAccount)!) + 1].Id;
+			}
+			catch (ArgumentOutOfRangeException)
+			{
+				selectedAccount = accounts[0].Id;
+			}
+			await _dialog.Close();
+		}
+		catch (Exception e)
+		{
+			error = e.Message;
+		}
+	}
 
 	protected async override void OnAfterRender(bool firstRender)
 	{
