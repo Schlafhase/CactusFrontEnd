@@ -30,6 +30,7 @@
         <ProjectReference Include="..\Messenger\Discord\Discord.csproj"/>
         <ProjectReference Include="..\Messenger\EmailService\EmailService.csproj"/>
         <ProjectReference Include="..\Messenger\MessengerInterfaces\MessengerInterfaces.csproj"/>
+        <ProjectReference Include="..\Messenger\OptimisedImages\OptimisedImages.csproj" />
         <ProjectReference Include="..\OptimisedImages\OptimisedImages.csproj"/>
     </ItemGroup>
 
